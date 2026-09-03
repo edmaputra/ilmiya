@@ -3,7 +3,7 @@ plugins {
 }
 
 springBoot {
-    mainClass.set("com.ilmiya.IlmiyaApplicationKt")
+    mainClass.set("io.github.edmaputra.ilmiya.IlmiyaApplicationKt")
 }
 
 

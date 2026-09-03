@@ -36,4 +36,4 @@ springdoc:
 logging:
   level:
     root: INFO
-    com.ilmiya: DEBUG
+    io.github.edmaputra.ilmiya: DEBUG

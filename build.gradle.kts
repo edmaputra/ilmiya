@@ -8,7 +8,7 @@ plugins {
 }
 
 allprojects {
-    group = "com.ilmiya"
+    group = "io.github.edmaputra.ilmiya"
     version = "0.0.1-SNAPSHOT"
 
     repositories {
