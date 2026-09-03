@@ -2,6 +2,11 @@ plugins {
     id("org.springframework.boot")
 }
 
+springBoot {
+    mainClass.set("com.ilmiya.IlmiyaApplicationKt")
+}
+
+
 dependencies {
     // All modules
     implementation(project(":ilmiya-common"))
