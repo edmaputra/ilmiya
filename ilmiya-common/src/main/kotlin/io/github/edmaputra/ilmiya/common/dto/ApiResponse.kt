@@ -1,6 +1,5 @@
 package io.github.edmaputra.ilmiya.common.dto
 
-import com.fasterxml.jackson.annotation.JsonInclude
 import java.time.Instant
 
 /**
@@ -9,7 +8,6 @@ import java.time.Instant
  * @param T payload data type
  * @author edmaputra
  */
-@JsonInclude(JsonInclude.Include.NON_NULL)
 data class ApiResponse<T>(
     val success: Boolean,
     val message: String? = null,
