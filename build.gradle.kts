@@ -1,11 +1,14 @@
 plugins {
     java
-    id("org.springframework.boot") version "3.4.3" apply false
+    kotlin("jvm") version "2.3.21" apply false
+    kotlin("plugin.spring") version "2.3.21" apply false
+    kotlin("plugin.jpa") version "2.3.21" apply false
+    id("org.springframework.boot") version "4.1.1" apply false
     id("io.spring.dependency-management") version "1.1.7" apply false
 }
 
 allprojects {
-    group = "com.ilmiya"
+    group = "io.github.edmaputra.ilmiya"
     version = "0.0.1-SNAPSHOT"
 
     repositories {
@@ -14,6 +17,9 @@ allprojects {
 }
 
 subprojects {
+    apply(plugin = "org.jetbrains.kotlin.jvm")
+    apply(plugin = "org.jetbrains.kotlin.plugin.spring")
+    apply(plugin = "org.jetbrains.kotlin.plugin.jpa")
     apply(plugin = "java-library")
     apply(plugin = "io.spring.dependency-management")
 
@@ -25,12 +31,16 @@ subprojects {
 
     the<io.spring.gradle.dependencymanagement.dsl.DependencyManagementExtension>().apply {
         imports {
-            mavenBom("org.springframework.boot:spring-boot-dependencies:3.4.3")
+            mavenBom("org.springframework.boot:spring-boot-dependencies:4.1.1")
         }
     }
 
     dependencies {
-        // Annotation Processors & Mapping (Using pure Java 25 Records + MapStruct)
+        // Kotlin Standard Libraries
+        "implementation"("org.jetbrains.kotlin:kotlin-reflect")
+        "implementation"("tools.jackson.module:jackson-module-kotlin")
+
+        // Annotation Processors & Mapping (MapStruct)
         "implementation"("org.mapstruct:mapstruct:1.6.3")
         "annotationProcessor"("org.mapstruct:mapstruct-processor:1.6.3")
 
@@ -40,10 +50,18 @@ subprojects {
 
         // Testing
         "testImplementation"("org.junit.jupiter:junit-jupiter")
+        "testImplementation"("org.assertj:assertj-core")
+        "testImplementation"("io.mockk:mockk:1.13.17")
+        "testImplementation"("com.ninja-squad:springmockk:4.0.2")
         "testImplementation"("org.mockito:mockito-core")
         "testImplementation"("org.mockito:mockito-junit-jupiter")
-        "testImplementation"("org.assertj:assertj-core")
         "testRuntimeOnly"("org.junit.platform:junit-platform-launcher")
+    }
+
+    tasks.withType<org.jetbrains.kotlin.gradle.tasks.KotlinCompile> {
+        compilerOptions {
+            freeCompilerArgs.addAll("-Xjsr305=strict", "-Xannotation-default-target=param-property")
+        }
     }
 
     tasks.withType<JavaCompile> {
