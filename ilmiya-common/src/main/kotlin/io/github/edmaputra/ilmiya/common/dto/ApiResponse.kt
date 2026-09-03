@@ -3,6 +3,12 @@ package io.github.edmaputra.ilmiya.common.dto
 import com.fasterxml.jackson.annotation.JsonInclude
 import java.time.Instant
 
+/**
+ * Standard REST API response envelope.
+ *
+ * @param T payload data type
+ * @author edmaputra
+ */
 @JsonInclude(JsonInclude.Include.NON_NULL)
 data class ApiResponse<T>(
     val success: Boolean,

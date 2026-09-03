@@ -2,6 +2,12 @@ package io.github.edmaputra.ilmiya.common.domain
 
 import java.util.Collections
 
+/**
+ * Abstract base class for aggregate roots managing internal domain events.
+ *
+ * @param ID the entity identifier type
+ * @author edmaputra
+ */
 abstract class AggregateRoot<ID : EntityId<*>> {
 
     private val _domainEvents: MutableList<DomainEvent> = mutableListOf()

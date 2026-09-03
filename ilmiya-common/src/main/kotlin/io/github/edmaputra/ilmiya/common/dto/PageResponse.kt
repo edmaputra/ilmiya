@@ -2,6 +2,12 @@ package io.github.edmaputra.ilmiya.common.dto
 
 import kotlin.math.ceil
 
+/**
+ * Standard pagination response envelope.
+ *
+ * @param T content item type
+ * @author edmaputra
+ */
 data class PageResponse<T>(
     val content: List<T>,
     val page: Int,

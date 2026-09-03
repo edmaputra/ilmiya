@@ -3,6 +3,11 @@ package io.github.edmaputra.ilmiya.common.context
 import io.github.edmaputra.ilmiya.common.domain.TenantId
 import java.util.Optional
 
+/**
+ * Thread-local tenant context accessor and propagation utility.
+ *
+ * @author edmaputra
+ */
 object TenantContext {
 
     private val CURRENT_TENANT = ThreadLocal<TenantId>()
