@@ -1,9 +1,9 @@
 plugins {
     java
-    kotlin("jvm") version "2.1.10" apply false
-    kotlin("plugin.spring") version "2.1.10" apply false
-    kotlin("plugin.jpa") version "2.1.10" apply false
-    id("org.springframework.boot") version "3.4.3" apply false
+    kotlin("jvm") version "2.3.21" apply false
+    kotlin("plugin.spring") version "2.3.21" apply false
+    kotlin("plugin.jpa") version "2.3.21" apply false
+    id("org.springframework.boot") version "4.1.1" apply false
     id("io.spring.dependency-management") version "1.1.7" apply false
 }
 
@@ -31,14 +31,14 @@ subprojects {
 
     the<io.spring.gradle.dependencymanagement.dsl.DependencyManagementExtension>().apply {
         imports {
-            mavenBom("org.springframework.boot:spring-boot-dependencies:3.4.3")
+            mavenBom("org.springframework.boot:spring-boot-dependencies:4.1.1")
         }
     }
 
     dependencies {
         // Kotlin Standard Libraries
         "implementation"("org.jetbrains.kotlin:kotlin-reflect")
-        "implementation"("com.fasterxml.jackson.module:jackson-module-kotlin")
+        "implementation"("tools.jackson.module:jackson-module-kotlin")
 
         // Annotation Processors & Mapping (MapStruct)
         "implementation"("org.mapstruct:mapstruct:1.6.3")
@@ -60,14 +60,12 @@ subprojects {
 
     tasks.withType<org.jetbrains.kotlin.gradle.tasks.KotlinCompile> {
         compilerOptions {
-            jvmTarget.set(org.jetbrains.kotlin.gradle.dsl.JvmTarget.JVM_21)
-            freeCompilerArgs.addAll("-Xjsr305=strict")
+            freeCompilerArgs.addAll("-Xjsr305=strict", "-Xannotation-default-target=param-property")
         }
     }
 
     tasks.withType<JavaCompile> {
         options.encoding = "UTF-8"
-        options.release.set(21)
         options.compilerArgs.addAll(
             listOf(
                 "-parameters",
