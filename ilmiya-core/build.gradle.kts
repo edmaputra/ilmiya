@@ -7,7 +7,7 @@ dependencies {
     implementation("org.springframework.boot:spring-boot-starter-validation")
 
     // ed-iam turnkey starter
-    api("io.github.edmaputra:ed-iam-starter:0.0.1")
+    api("io.github.edmaputra:ed-iam-starter:0.1.0")
 
     // Testing
     testImplementation("org.springframework.boot:spring-boot-starter-test")

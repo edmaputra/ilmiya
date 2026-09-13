@@ -1,5 +1,6 @@
 package io.github.edmaputra.ilmiya.core.security
 
+import io.github.edmaputra.iam.adapter.security.evaluator.IamSecurityEvaluator
 import io.github.edmaputra.iam.domain.security.CurrentActor
 import io.github.edmaputra.iam.domain.security.CurrentActorProvider
 import io.mockk.every
@@ -51,15 +52,16 @@ class IamSecurityEvaluatorTest {
         assertThat(evaluator.hasAllPermissions(IlmiyaPermissions.ATTENDANCE_RECORD, IlmiyaPermissions.STUDENT_PROFILE_WRITE)).isFalse()
 
         assertThat(evaluator.canAccessScope(scope1)).isTrue()
-        assertThat(evaluator.canAccessScope(scope1.toString())).isTrue()
         assertThat(evaluator.canAccessScope(scope2)).isFalse()
-        assertThat(evaluator.canAccessScope("invalid-uuid")).isFalse()
+
+        assertThat(evaluator.hasRole("TEACHER")).isTrue()
+        assertThat(evaluator.hasRole("STUDENT")).isFalse()
+
+        assertThat(evaluator.isInGroup("TEACHERS")).isTrue()
+        assertThat(evaluator.isInGroup("STUDENTS")).isFalse()
 
         assertThat(evaluator.isPlatformSuperAdmin()).isFalse()
         assertThat(evaluator.isTenantWide()).isFalse()
-        assertThat(evaluator.getUserId()).isEqualTo(userId)
-        assertThat(evaluator.getEmail()).isEqualTo("teacher@school.org")
-        assertThat(evaluator.getTenantId()).isEqualTo(tenantId)
     }
 
     @Test
@@ -89,11 +91,12 @@ class IamSecurityEvaluatorTest {
         every { currentActorProvider.currentActor() } returns Optional.empty()
 
         assertThat(evaluator.hasPermission(IlmiyaPermissions.ATTENDANCE_RECORD)).isFalse()
+        assertThat(evaluator.hasAnyPermission(IlmiyaPermissions.ATTENDANCE_RECORD)).isFalse()
+        assertThat(evaluator.hasAllPermissions(IlmiyaPermissions.ATTENDANCE_RECORD)).isFalse()
         assertThat(evaluator.canAccessScope(scope1)).isFalse()
+        assertThat(evaluator.hasRole("TEACHER")).isFalse()
+        assertThat(evaluator.isInGroup("TEACHERS")).isFalse()
         assertThat(evaluator.isPlatformSuperAdmin()).isFalse()
         assertThat(evaluator.isTenantWide()).isFalse()
-        assertThat(evaluator.getUserId()).isNull()
-        assertThat(evaluator.getEmail()).isNull()
-        assertThat(evaluator.getTenantId()).isNull()
     }
 }
