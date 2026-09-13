@@ -7,6 +7,7 @@ import java.time.Instant
  *
  * @param T payload data type
  * @author edmaputra
+ * @since 0.0.1
  */
 data class ApiResponse<T>(
     val success: Boolean,

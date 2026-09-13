@@ -7,6 +7,7 @@ import java.io.Serializable
  *
  * @param T the underlying identifier type
  * @author edmaputra
+ * @since 0.0.1
  */
 interface EntityId<T> : Serializable {
     val value: T
