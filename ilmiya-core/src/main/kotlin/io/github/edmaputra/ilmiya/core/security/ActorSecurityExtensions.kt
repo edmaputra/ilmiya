@@ -9,6 +9,7 @@ import java.util.UUID
  * Idiomatic Kotlin extensions for actor authorization and scoping checks.
  *
  * @author edmaputra
+ * @since 0.0.1
  */
 
 /**

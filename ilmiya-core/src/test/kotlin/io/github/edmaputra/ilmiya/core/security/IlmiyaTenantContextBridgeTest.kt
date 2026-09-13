@@ -12,20 +12,23 @@ class IlmiyaTenantContextBridgeTest {
     private val bridge = IlmiyaTenantContextBridge()
 
     @Test
-    fun `should bind tenant id into TenantContext within runnable execution`() {
+    fun `should bind tenant id into TenantContext and MDC within runnable execution`() {
         val tenantUuid = UUID.randomUUID()
 
         assertThat(TenantContext.isBound()).isFalse()
+        assertThat(org.slf4j.MDC.get("tenantId")).isNull()
 
         var executed = false
         bridge.runWithTenant(tenantUuid, TenantContextBridge.ThrowingRunnable {
             assertThat(TenantContext.isBound()).isTrue()
             assertThat(TenantContext.requireTenantId()).isEqualTo(TenantId.of(tenantUuid))
             assertThat(TenantContext.getTenantIdValue()).isEqualTo(tenantUuid.toString())
+            assertThat(org.slf4j.MDC.get("tenantId")).isEqualTo(tenantUuid.toString())
             executed = true
         })
 
         assertThat(executed).isTrue()
         assertThat(TenantContext.isBound()).isFalse()
+        assertThat(org.slf4j.MDC.get("tenantId")).isNull()
     }
 }

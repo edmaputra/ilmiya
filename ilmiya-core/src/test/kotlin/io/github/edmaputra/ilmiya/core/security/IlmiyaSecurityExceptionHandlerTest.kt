@@ -14,52 +14,52 @@ class IlmiyaSecurityExceptionHandlerTest {
     private val handler = IlmiyaSecurityExceptionHandler()
 
     @Test
-    fun `should handle IAM AccessDeniedException with HTTP 403 and error ApiResponse`() {
+    fun `should handle IAM AccessDeniedException with HTTP 403 and ProblemDetail`() {
         val ex = IamAccessDeniedException("User lacks ACADEMIC_YEAR_WRITE permission")
-        val response = handler.handleAccessDenied(ex)
+        val problem = handler.handleAccessDenied(ex)
 
-        assertThat(response.statusCode).isEqualTo(HttpStatus.FORBIDDEN)
-        assertThat(response.body).isNotNull
-        assertThat(response.body!!.success).isFalse()
-        assertThat(response.body!!.message).contains("Access denied")
-        assertThat(response.body!!.errors).contains("User lacks ACADEMIC_YEAR_WRITE permission")
+        assertThat(problem.status).isEqualTo(HttpStatus.FORBIDDEN.value())
+        assertThat(problem.title).isEqualTo("Access Denied")
+        assertThat(problem.detail).contains("User lacks ACADEMIC_YEAR_WRITE permission")
+        assertThat(problem.type.toString()).isEqualTo("https://api.edmaputra.github.io/problems/access-denied")
     }
 
     @Test
-    fun `should handle Spring Security AccessDeniedException with HTTP 403`() {
+    fun `should handle Spring Security AccessDeniedException with HTTP 403 and ProblemDetail`() {
         val ex = SpringAccessDeniedException("Access is denied")
-        val response = handler.handleAccessDenied(ex)
+        val problem = handler.handleAccessDenied(ex)
 
-        assertThat(response.statusCode).isEqualTo(HttpStatus.FORBIDDEN)
-        assertThat(response.body!!.success).isFalse()
-        assertThat(response.body!!.errors).contains("Access is denied")
+        assertThat(problem.status).isEqualTo(HttpStatus.FORBIDDEN.value())
+        assertThat(problem.title).isEqualTo("Access Denied")
+        assertThat(problem.detail).contains("Access is denied")
     }
 
     @Test
-    fun `should handle IAM AuthenticationException with HTTP 401 and error ApiResponse`() {
+    fun `should handle IAM AuthenticationException with HTTP 401 and ProblemDetail`() {
         val ex = IamAuthenticationException("Invalid or expired JWT token")
-        val response = handler.handleAuthentication(ex)
+        val problem = handler.handleAuthentication(ex)
 
-        assertThat(response.statusCode).isEqualTo(HttpStatus.UNAUTHORIZED)
-        assertThat(response.body).isNotNull
-        assertThat(response.body!!.success).isFalse()
-        assertThat(response.body!!.message).contains("Authentication failure")
-        assertThat(response.body!!.errors).contains("Invalid or expired JWT token")
+        assertThat(problem.status).isEqualTo(HttpStatus.UNAUTHORIZED.value())
+        assertThat(problem.title).isEqualTo("Unauthorized")
+        assertThat(problem.detail).contains("Invalid or expired JWT token")
+        assertThat(problem.type.toString()).isEqualTo("https://api.edmaputra.github.io/problems/unauthorized")
     }
 
     @Test
-    fun `should handle entity not found exceptions with HTTP 404`() {
+    fun `should handle entity not found exceptions with HTTP 404 and ProblemDetail`() {
         val userEx = UserNotFoundException("user@test.com")
-        val userResponse = handler.handleEntityNotFound(userEx)
+        val userProblem = handler.handleEntityNotFound(userEx)
 
-        assertThat(userResponse.statusCode).isEqualTo(HttpStatus.NOT_FOUND)
-        assertThat(userResponse.body!!.success).isFalse()
-        assertThat(userResponse.body!!.errors).contains("User not found with email: user@test.com")
+        assertThat(userProblem.status).isEqualTo(HttpStatus.NOT_FOUND.value())
+        assertThat(userProblem.title).isEqualTo("Resource Not Found")
+        assertThat(userProblem.detail).contains("User not found with email: user@test.com")
+        assertThat(userProblem.type.toString()).isEqualTo("https://api.edmaputra.github.io/problems/not-found")
 
         val roleEx = RoleNotFoundException("TEACHER")
-        val roleResponse = handler.handleEntityNotFound(roleEx)
+        val roleProblem = handler.handleEntityNotFound(roleEx)
 
-        assertThat(roleResponse.statusCode).isEqualTo(HttpStatus.NOT_FOUND)
-        assertThat(roleResponse.body!!.errors).contains("Role not found with code: TEACHER")
+        assertThat(roleProblem.status).isEqualTo(HttpStatus.NOT_FOUND.value())
+        assertThat(roleProblem.title).isEqualTo("Resource Not Found")
+        assertThat(roleProblem.detail).contains("Role not found with code: TEACHER")
     }
 }

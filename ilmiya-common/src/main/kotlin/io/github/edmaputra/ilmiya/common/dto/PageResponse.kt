@@ -7,6 +7,7 @@ import kotlin.math.ceil
  *
  * @param T content item type
  * @author edmaputra
+ * @since 0.0.1
  */
 data class PageResponse<T>(
     val content: List<T>,

@@ -61,6 +61,7 @@ subprojects {
 
     tasks.withType<org.jetbrains.kotlin.gradle.tasks.KotlinCompile> {
         compilerOptions {
+            jvmTarget.set(org.jetbrains.kotlin.gradle.dsl.JvmTarget.JVM_25)
             freeCompilerArgs.addAll("-Xjsr305=strict", "-Xannotation-default-target=param-property")
         }
     }

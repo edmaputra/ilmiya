@@ -4,6 +4,7 @@ package io.github.edmaputra.ilmiya.core.security
  * Standard fine-grained permission constants across Ilmiya bounded contexts.
  *
  * @author edmaputra
+ * @since 0.0.1
  */
 object IlmiyaPermissions {
 

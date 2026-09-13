@@ -7,6 +7,7 @@ import jakarta.validation.constraints.NotBlank
  *
  * @property value the unique tenant key
  * @author edmaputra
+ * @since 0.0.1
  */
 data class TenantId(@NotBlank override val value: String) : EntityId<String> {
     init {

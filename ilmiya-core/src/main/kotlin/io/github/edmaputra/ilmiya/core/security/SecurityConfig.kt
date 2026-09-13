@@ -19,6 +19,7 @@ import org.springframework.security.web.authentication.UsernamePasswordAuthentic
  * and establishes endpoint authorization rules.
  *
  * @author edmaputra
+ * @since 0.0.1
  */
 @Configuration(proxyBeanMethods = false)
 @EnableWebSecurity
@@ -31,11 +32,12 @@ class SecurityConfig(
     fun corsConfigurationSource(): org.springframework.web.cors.CorsConfigurationSource {
         val configuration = org.springframework.web.cors.CorsConfiguration()
         configuration.allowedOriginPatterns = listOf("*")
-        configuration.allowedMethods = listOf("GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS")
-        configuration.allowedHeaders = listOf("*")
+        configuration.allowedMethods = listOf("GET", "POST", "PUT", "PATCH", "DELETE")
+        configuration.allowedHeaders = listOf("Authorization", "Content-Type", "X-Request-Id", "X-Tenant-Id")
         configuration.allowCredentials = true
+        configuration.maxAge = 3600L
         val source = org.springframework.web.cors.UrlBasedCorsConfigurationSource()
-        source.registerCorsConfiguration("/**", configuration)
+        source.registerCorsConfiguration("/api/**", configuration)
         return source
     }
 
@@ -66,18 +68,18 @@ class SecurityConfig(
                 exceptions
                     .authenticationEntryPoint { _, response, authException ->
                         response.status = HttpServletResponse.SC_UNAUTHORIZED
-                        response.contentType = MediaType.APPLICATION_JSON_VALUE
+                        response.contentType = MediaType.APPLICATION_PROBLEM_JSON_VALUE
                         val msg = authException.message?.replace("\"", "\\\"") ?: "Authentication required"
                         response.writer.write(
-                            """{"success":false,"message":"Unauthorized","errors":["$msg"]}"""
+                            """{"type":"https://api.edmaputra.github.io/problems/unauthorized","title":"Unauthorized","status":401,"detail":"$msg"}"""
                         )
                     }
                     .accessDeniedHandler { _, response, accessDeniedException ->
                         response.status = HttpServletResponse.SC_FORBIDDEN
-                        response.contentType = MediaType.APPLICATION_JSON_VALUE
+                        response.contentType = MediaType.APPLICATION_PROBLEM_JSON_VALUE
                         val msg = accessDeniedException.message?.replace("\"", "\\\"") ?: "Access denied"
                         response.writer.write(
-                            """{"success":false,"message":"Access Denied","errors":["$msg"]}"""
+                            """{"type":"https://api.edmaputra.github.io/problems/access-denied","title":"Forbidden","status":403,"detail":"$msg"}"""
                         )
                     }
             }
