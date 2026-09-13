@@ -99,4 +99,26 @@ class IamSecurityEvaluatorTest {
         assertThat(evaluator.isPlatformSuperAdmin()).isFalse()
         assertThat(evaluator.isTenantWide()).isFalse()
     }
+
+    @Test
+    fun `should evaluate domain wildcard permissions correctly`() {
+        val actor = object : CurrentActor {
+            override fun userId(): UUID = this@IamSecurityEvaluatorTest.userId
+            override fun email(): String = "principal@school.org"
+            override fun tenantId(): UUID = this@IamSecurityEvaluatorTest.tenantId
+            override fun isPlatformSuperAdmin(): Boolean = false
+            override fun isTenantWide(): Boolean = false
+            override fun groups(): Set<String> = emptySet()
+            override fun roles(): Set<String> = emptySet()
+            override fun permissions(): Set<String> = setOf("student:*", "academic:*")
+            override fun accessibleScopeNodeIds(): Set<UUID> = emptySet()
+        }
+
+        every { currentActorProvider.currentActor() } returns Optional.of(actor)
+
+        assertThat(evaluator.hasPermission(IlmiyaPermissions.STUDENT_PROFILE_READ)).isTrue()
+        assertThat(evaluator.hasPermission(IlmiyaPermissions.STUDENT_PROFILE_WRITE)).isTrue()
+        assertThat(evaluator.hasPermission(IlmiyaPermissions.ACADEMIC_YEAR_READ)).isTrue()
+        assertThat(evaluator.hasPermission(IlmiyaPermissions.ATTENDANCE_RECORD)).isFalse()
+    }
 }
