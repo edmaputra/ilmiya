@@ -7,6 +7,7 @@ import java.util.Collections
  *
  * @param ID the entity identifier type
  * @author edmaputra
+ * @since 0.0.1
  */
 abstract class AggregateRoot<ID : EntityId<*>> {
 

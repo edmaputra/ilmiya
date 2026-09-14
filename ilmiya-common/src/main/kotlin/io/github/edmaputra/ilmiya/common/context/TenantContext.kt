@@ -9,6 +9,7 @@ import java.lang.ScopedValue
  * Uses Java 25 ScopedValue for immutable, thread-safe, and virtual-thread-friendly context propagation.
  *
  * @author edmaputra
+ * @since 0.0.1
  */
 object TenantContext {
 

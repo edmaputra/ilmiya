@@ -8,6 +8,7 @@ import org.springframework.boot.runApplication
  * Spring Boot composition root for Ilmiya application.
  *
  * @author edmaputra
+ * @since 0.0.1
  */
 @SpringBootApplication
 @ConfigurationPropertiesScan
