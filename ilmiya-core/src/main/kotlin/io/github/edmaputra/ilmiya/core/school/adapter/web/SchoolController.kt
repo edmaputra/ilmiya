@@ -1,11 +1,13 @@
 package io.github.edmaputra.ilmiya.core.school.adapter.web
 
+import io.github.edmaputra.iam.domain.security.annotation.RequirePermission
 import io.github.edmaputra.ilmiya.common.context.TenantContext
 import io.github.edmaputra.ilmiya.common.dto.ApiResponse
 import io.github.edmaputra.ilmiya.core.school.domain.port.`in`.ConfigureSchoolSettingsUseCase
 import io.github.edmaputra.ilmiya.core.school.domain.port.`in`.GetSchoolProfileUseCase
 import io.github.edmaputra.ilmiya.core.school.domain.port.`in`.RegisterSchoolUseCase
 import io.github.edmaputra.ilmiya.core.school.domain.port.`in`.UpdateSchoolProfileUseCase
+import io.github.edmaputra.ilmiya.core.security.IlmiyaPermissions
 import jakarta.validation.Valid
 import org.springframework.http.HttpStatus
 import org.springframework.http.ResponseEntity
@@ -47,6 +49,7 @@ class SchoolController(
      * Retrieves the institutional profile for the currently active tenant context.
      */
     @GetMapping("/profile")
+    @RequirePermission(IlmiyaPermissions.SCHOOL_PROFILE_READ)
     fun getProfile(): ResponseEntity<ApiResponse<SchoolResponse>> {
         val tenantId = TenantContext.requireTenantId()
         val school = getSchoolProfileUseCase.getProfile(tenantId)
@@ -57,6 +60,7 @@ class SchoolController(
      * Updates the school institutional profile for the current tenant.
      */
     @PutMapping("/profile")
+    @RequirePermission(IlmiyaPermissions.SCHOOL_PROFILE_WRITE)
     fun updateProfile(
         @Valid @RequestBody request: UpdateSchoolRequest
     ): ResponseEntity<ApiResponse<SchoolResponse>> {
@@ -69,6 +73,7 @@ class SchoolController(
      * Configures operational settings for the current school tenant.
      */
     @PutMapping("/settings")
+    @RequirePermission(IlmiyaPermissions.SCHOOL_SETTINGS_MANAGE)
     fun configureSettings(
         @Valid @RequestBody request: ConfigureSchoolSettingsRequest
     ): ResponseEntity<ApiResponse<SchoolResponse>> {

@@ -50,6 +50,11 @@ class SecurityConfig(
             .authorizeHttpRequests { auth ->
                 auth
                     .requestMatchers(
+                        // Public school registration / provisioning
+                        org.springframework.http.HttpMethod.POST,
+                        "/api/v1/schools"
+                    ).permitAll()
+                    .requestMatchers(
                         // ed-iam authentication endpoints
                         "/api/v1/auth/login",
                         "/api/v1/auth/refresh",
