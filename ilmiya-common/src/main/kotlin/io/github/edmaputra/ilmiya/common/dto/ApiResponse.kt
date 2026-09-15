@@ -8,7 +8,9 @@ import java.time.Instant
  * @param T payload data type
  * @author edmaputra
  * @since 0.0.1
+ * @deprecated Prefer direct DTO responses for single resources and RFC 9457 ProblemDetail for errors.
  */
+@Deprecated("Prefer direct DTO responses for single resources and RFC 9457 ProblemDetail for errors as per API conventions")
 data class ApiResponse<T>(
     val success: Boolean,
     val message: String? = null,
