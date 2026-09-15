@@ -21,6 +21,7 @@ import org.springframework.transaction.annotation.Transactional
  * Transactional decorator for school registration use case.
  *
  * @author edmaputra
+ * @since 0.0.1
  */
 @Service
 class TransactionalRegisterSchoolUseCase(
@@ -39,6 +40,7 @@ class TransactionalRegisterSchoolUseCase(
  * Transactional decorator for school profile retrieval and update use cases.
  *
  * @author edmaputra
+ * @since 0.0.1
  */
 @Service
 class TransactionalSchoolProfileUseCase(
@@ -61,6 +63,7 @@ class TransactionalSchoolProfileUseCase(
  * Transactional decorator for school operational settings configuration use case.
  *
  * @author edmaputra
+ * @since 0.0.1
  */
 @Service
 class TransactionalConfigureSchoolSettingsUseCase(

@@ -2,14 +2,12 @@ package io.github.edmaputra.ilmiya.core.school.adapter.web
 
 import io.github.edmaputra.iam.domain.security.annotation.RequirePermission
 import io.github.edmaputra.ilmiya.common.context.TenantContext
-import io.github.edmaputra.ilmiya.common.dto.ApiResponse
 import io.github.edmaputra.ilmiya.core.school.domain.port.`in`.ConfigureSchoolSettingsUseCase
 import io.github.edmaputra.ilmiya.core.school.domain.port.`in`.GetSchoolProfileUseCase
 import io.github.edmaputra.ilmiya.core.school.domain.port.`in`.RegisterSchoolUseCase
 import io.github.edmaputra.ilmiya.core.school.domain.port.`in`.UpdateSchoolProfileUseCase
 import io.github.edmaputra.ilmiya.core.security.IlmiyaPermissions
 import jakarta.validation.Valid
-import org.springframework.http.HttpStatus
 import org.springframework.http.ResponseEntity
 import org.springframework.web.bind.annotation.GetMapping
 import org.springframework.web.bind.annotation.PostMapping
@@ -17,11 +15,13 @@ import org.springframework.web.bind.annotation.PutMapping
 import org.springframework.web.bind.annotation.RequestBody
 import org.springframework.web.bind.annotation.RequestMapping
 import org.springframework.web.bind.annotation.RestController
+import java.net.URI
 
 /**
  * REST controller exposing endpoints for school registration, institutional profiles, and settings.
  *
  * @author edmaputra
+ * @since 0.0.1
  */
 @RestController
 @RequestMapping("/api/v1/schools")
@@ -38,11 +38,11 @@ class SchoolController(
     @PostMapping
     fun registerSchool(
         @Valid @RequestBody request: RegisterSchoolRequest
-    ): ResponseEntity<ApiResponse<SchoolResponse>> {
+    ): ResponseEntity<SchoolResponse> {
         val school = registerSchoolUseCase.register(request.toCommand())
-        return ResponseEntity
-            .status(HttpStatus.CREATED)
-            .body(ApiResponse.ok(SchoolResponse.from(school), "School registered successfully."))
+        val response = SchoolResponse.from(school)
+        val location = URI.create("/api/v1/schools/profile")
+        return ResponseEntity.created(location).body(response)
     }
 
     /**
@@ -50,10 +50,10 @@ class SchoolController(
      */
     @GetMapping("/profile")
     @RequirePermission(IlmiyaPermissions.SCHOOL_PROFILE_READ)
-    fun getProfile(): ResponseEntity<ApiResponse<SchoolResponse>> {
+    fun getProfile(): ResponseEntity<SchoolResponse> {
         val tenantId = TenantContext.requireTenantId()
         val school = getSchoolProfileUseCase.getProfile(tenantId)
-        return ResponseEntity.ok(ApiResponse.ok(SchoolResponse.from(school)))
+        return ResponseEntity.ok(SchoolResponse.from(school))
     }
 
     /**
@@ -63,10 +63,10 @@ class SchoolController(
     @RequirePermission(IlmiyaPermissions.SCHOOL_PROFILE_WRITE)
     fun updateProfile(
         @Valid @RequestBody request: UpdateSchoolRequest
-    ): ResponseEntity<ApiResponse<SchoolResponse>> {
+    ): ResponseEntity<SchoolResponse> {
         val tenantId = TenantContext.requireTenantId()
         val school = updateSchoolProfileUseCase.updateProfile(tenantId, request.toCommand())
-        return ResponseEntity.ok(ApiResponse.ok(SchoolResponse.from(school), "School profile updated successfully."))
+        return ResponseEntity.ok(SchoolResponse.from(school))
     }
 
     /**
@@ -76,9 +76,9 @@ class SchoolController(
     @RequirePermission(IlmiyaPermissions.SCHOOL_SETTINGS_MANAGE)
     fun configureSettings(
         @Valid @RequestBody request: ConfigureSchoolSettingsRequest
-    ): ResponseEntity<ApiResponse<SchoolResponse>> {
+    ): ResponseEntity<SchoolResponse> {
         val tenantId = TenantContext.requireTenantId()
         val school = configureSchoolSettingsUseCase.configureSettings(tenantId, request.toCommand())
-        return ResponseEntity.ok(ApiResponse.ok(SchoolResponse.from(school), "Operational settings updated successfully."))
+        return ResponseEntity.ok(SchoolResponse.from(school))
     }
 }

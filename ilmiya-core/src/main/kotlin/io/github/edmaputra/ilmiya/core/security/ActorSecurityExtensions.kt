@@ -1,5 +1,7 @@
 package io.github.edmaputra.ilmiya.core.security
 
+import io.github.edmaputra.iam.domain.context.ActorType
+import io.github.edmaputra.iam.domain.context.OperationContext
 import io.github.edmaputra.iam.domain.exception.AccessDeniedException
 import io.github.edmaputra.iam.domain.security.CurrentActor
 import io.github.edmaputra.iam.domain.security.CurrentActorProvider
@@ -75,3 +77,44 @@ fun CurrentActorProvider.requireActor(): CurrentActor =
     currentActor().orElseThrow {
         AccessDeniedException("Access denied: Authenticated actor context is required.")
     }
+
+/**
+ * Transforms the authenticated [CurrentActor] into an ed-iam [OperationContext].
+ */
+fun CurrentActor.toOperationContext(
+    correlationId: String? = null,
+    actorType: ActorType = ActorType.USER
+): OperationContext =
+    OperationContext.of(
+        userId().toString(),
+        actorType,
+        tenantId(),
+        correlationId
+    )
+
+/**
+ * Convenience accessor to retrieve current actor as an [OperationContext] or throw an [AccessDeniedException].
+ */
+fun CurrentActorProvider.requireOperationContext(
+    correlationId: String? = null,
+    actorType: ActorType = ActorType.USER
+): OperationContext =
+    requireActor().toOperationContext(correlationId, actorType)
+
+/**
+ * Retrieves an [OperationContext] for the current caller if authenticated, or falls back to a [ActorType.SYSTEM]
+ * operation context if no actor is bound in the current thread scope.
+ */
+fun CurrentActorProvider.currentOperationContext(
+    correlationId: String? = null,
+    fallbackTenantId: UUID? = null
+): OperationContext =
+    currentActor()
+        .map { it.toOperationContext(correlationId) }
+        .orElseGet {
+            if (fallbackTenantId != null) {
+                OperationContext.system(fallbackTenantId)
+            } else {
+                OperationContext.system()
+            }
+        }

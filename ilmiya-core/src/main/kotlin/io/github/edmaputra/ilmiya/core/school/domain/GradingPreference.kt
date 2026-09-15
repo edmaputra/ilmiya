@@ -4,6 +4,7 @@ package io.github.edmaputra.ilmiya.core.school.domain
  * Supported grading scales and formats for school assessment.
  *
  * @author edmaputra
+ * @since 0.0.1
  */
 enum class GradingPreference {
     NUMERIC_0_100,

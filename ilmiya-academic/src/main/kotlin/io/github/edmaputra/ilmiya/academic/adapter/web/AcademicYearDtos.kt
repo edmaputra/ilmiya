@@ -13,6 +13,7 @@ import java.time.LocalDate
  * Request payload for creating a new academic year.
  *
  * @author edmaputra
+ * @since 0.0.1
  */
 data class CreateAcademicYearRequest(
     @field:NotBlank(message = "Academic year name is required")
@@ -35,6 +36,7 @@ data class CreateAcademicYearRequest(
  * Request payload for adding an academic term to an academic year.
  *
  * @author edmaputra
+ * @since 0.0.1
  */
 data class AddAcademicTermRequest(
     @field:NotBlank(message = "Term name is required")
@@ -65,6 +67,7 @@ data class AddAcademicTermRequest(
  * Response payload representing an academic term.
  *
  * @author edmaputra
+ * @since 0.0.1
  */
 data class AcademicTermResponse(
     val id: String,
@@ -92,6 +95,7 @@ data class AcademicTermResponse(
  * Response payload representing an academic year and its terms.
  *
  * @author edmaputra
+ * @since 0.0.1
  */
 data class AcademicYearResponse(
     val id: String,

@@ -8,6 +8,7 @@ import io.github.edmaputra.ilmiya.common.domain.TenantId
  * Inbound port for activating an academic year and archiving previous active years.
  *
  * @author edmaputra
+ * @since 0.0.1
  */
 interface ActivateAcademicYearUseCase {
 

@@ -14,6 +14,7 @@ import io.github.edmaputra.ilmiya.core.school.domain.Accreditation
  * @property registrationType updated registration type
  * @property accreditation updated accreditation status
  * @author edmaputra
+ * @since 0.0.1
  */
 data class UpdateSchoolProfileCommand(
     val name: String,

@@ -24,6 +24,7 @@ import io.github.edmaputra.ilmiya.common.domain.TenantId
  * @property academicYearRepository persistence port for academic years
  * @property eventPublisher outbound domain event publisher
  * @author edmaputra
+ * @since 0.0.1
  */
 class AcademicYearService(
     private val academicYearRepository: AcademicYearRepository,

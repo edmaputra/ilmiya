@@ -13,6 +13,7 @@ import java.time.Instant
  * @property name the name of the school
  * @property occurredOn instant when the event occurred
  * @author edmaputra
+ * @since 0.0.1
  */
 data class SchoolRegisteredEvent(
     val schoolId: SchoolId,
@@ -30,6 +31,7 @@ data class SchoolRegisteredEvent(
  * @property name updated school name
  * @property occurredOn instant when the event occurred
  * @author edmaputra
+ * @since 0.0.1
  */
 data class SchoolProfileUpdatedEvent(
     val schoolId: SchoolId,
@@ -45,6 +47,7 @@ data class SchoolProfileUpdatedEvent(
  * @property tenantId the tenant boundary of the school
  * @property occurredOn instant when the event occurred
  * @author edmaputra
+ * @since 0.0.1
  */
 data class SchoolSettingsConfiguredEvent(
     val schoolId: SchoolId,

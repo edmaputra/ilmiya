@@ -4,6 +4,7 @@ package io.github.edmaputra.ilmiya.academic.domain
  * Universal term and semester types for primary, secondary, and vocational academic calendars.
  *
  * @author edmaputra
+ * @since 0.0.1
  */
 enum class AcademicTermType {
     SEMESTER_1,

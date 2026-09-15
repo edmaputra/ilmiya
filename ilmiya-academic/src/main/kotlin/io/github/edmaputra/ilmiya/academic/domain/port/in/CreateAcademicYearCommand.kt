@@ -9,6 +9,7 @@ import java.time.LocalDate
  * @property startDate start date of the academic year
  * @property endDate end date of the academic year
  * @author edmaputra
+ * @since 0.0.1
  */
 data class CreateAcademicYearCommand(
     val name: String,

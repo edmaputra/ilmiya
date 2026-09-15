@@ -7,6 +7,7 @@ import io.github.edmaputra.ilmiya.common.domain.TenantId
  * Inbound port for creating and registering an institutional academic year.
  *
  * @author edmaputra
+ * @since 0.0.1
  */
 interface CreateAcademicYearUseCase {
 

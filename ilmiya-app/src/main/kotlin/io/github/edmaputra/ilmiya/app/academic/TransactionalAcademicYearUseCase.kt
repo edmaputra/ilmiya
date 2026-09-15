@@ -22,6 +22,7 @@ import org.springframework.transaction.annotation.Transactional
  * Transactional decorator for academic year and term use cases.
  *
  * @author edmaputra
+ * @since 0.0.1
  */
 @Service
 class TransactionalAcademicYearUseCase(

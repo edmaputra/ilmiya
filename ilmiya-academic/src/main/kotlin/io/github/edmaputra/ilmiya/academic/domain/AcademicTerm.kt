@@ -13,6 +13,7 @@ import java.time.LocalDate
  * @property endDate inclusive end date of the term
  * @property status current operational status of the term
  * @author edmaputra
+ * @since 0.0.1
  */
 data class AcademicTerm(
     val id: AcademicTermId,

@@ -7,6 +7,7 @@ import java.util.Optional
  * Spring Data JPA repository for academic years.
  *
  * @author edmaputra
+ * @since 0.0.1
  */
 interface SpringDataAcademicYearRepository : JpaRepository<AcademicYearJpaEntity, String> {
 

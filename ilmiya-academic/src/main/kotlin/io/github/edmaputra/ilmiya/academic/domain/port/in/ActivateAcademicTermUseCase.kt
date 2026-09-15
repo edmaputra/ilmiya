@@ -9,6 +9,7 @@ import io.github.edmaputra.ilmiya.common.domain.TenantId
  * Inbound port for activating an academic term within an academic year.
  *
  * @author edmaputra
+ * @since 0.0.1
  */
 interface ActivateAcademicTermUseCase {
 

@@ -23,6 +23,7 @@ import java.time.LocalDate
  * @property createdAt timestamp of creation
  * @property updatedAt timestamp of latest modification
  * @author edmaputra
+ * @since 0.0.1
  */
 data class AcademicYear(
     override val id: AcademicYearId,

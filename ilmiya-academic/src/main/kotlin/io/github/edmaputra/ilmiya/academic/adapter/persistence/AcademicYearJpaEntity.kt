@@ -8,13 +8,16 @@ import jakarta.persistence.Id
 import jakarta.persistence.JoinColumn
 import jakarta.persistence.OneToMany
 import jakarta.persistence.Table
+import jakarta.persistence.Version
 import java.time.Instant
 import java.time.LocalDate
+import java.util.UUID
 
 /**
  * JPA entity representing an academic calendar year and its child terms.
  *
  * @author edmaputra
+ * @since 0.0.1
  */
 @Entity
 @Table(name = "academic_years")
@@ -42,9 +45,28 @@ class AcademicYearJpaEntity(
     @JoinColumn(name = "academic_year_id")
     var terms: MutableList<AcademicTermJpaEntity> = mutableListOf(),
 
+    @Version
+    @Column(name = "version", nullable = false)
+    var version: Long = 0L,
+
     @Column(name = "created_at", nullable = false, updatable = false)
     var createdAt: Instant = Instant.now(),
 
     @Column(name = "updated_at", nullable = false)
-    var updatedAt: Instant = Instant.now()
-)
+    var updatedAt: Instant = Instant.now(),
+
+    @Column(name = "created_by")
+    var createdBy: UUID? = null,
+
+    @Column(name = "updated_by")
+    var updatedBy: UUID? = null
+) {
+    override fun equals(other: Any?): Boolean {
+        if (this === other) return true
+        if (other !is AcademicYearJpaEntity) return false
+        return id.isNotBlank() && id == other.id
+    }
+
+    override fun hashCode(): Int = id.hashCode()
+    override fun toString(): String = "AcademicYearJpaEntity(id='$id', name='$name', tenantId='$tenantId')"
+}

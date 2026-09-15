@@ -14,6 +14,7 @@ import io.github.edmaputra.ilmiya.core.school.domain.port.out.SchoolRepository
  * @property schoolRepository persistence port for school aggregates
  * @property eventPublisher outbound publisher for school domain events
  * @author edmaputra
+ * @since 0.0.1
  */
 class RegisterSchoolService(
     private val schoolRepository: SchoolRepository,

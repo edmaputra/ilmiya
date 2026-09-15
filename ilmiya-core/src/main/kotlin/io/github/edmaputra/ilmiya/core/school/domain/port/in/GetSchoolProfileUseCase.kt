@@ -7,6 +7,7 @@ import io.github.edmaputra.ilmiya.core.school.domain.School
  * Inbound port for retrieving the current institutional profile within the active tenant boundary.
  *
  * @author edmaputra
+ * @since 0.0.1
  */
 interface GetSchoolProfileUseCase {
 

@@ -11,6 +11,7 @@ import org.springframework.stereotype.Component
  * Spring-backed event publisher adapter routing school events to Spring's [ApplicationEventPublisher].
  *
  * @author edmaputra
+ * @since 0.0.1
  */
 @Component
 class SpringSchoolEventPublisher(
@@ -29,6 +30,7 @@ class SpringSchoolEventPublisher(
  * Spring-backed event publisher adapter routing academic year events to Spring's [ApplicationEventPublisher].
  *
  * @author edmaputra
+ * @since 0.0.1
  */
 @Component
 class SpringAcademicYearEventPublisher(

@@ -8,6 +8,7 @@ import java.util.UUID
  *
  * @property value unique academic year identifier string
  * @author edmaputra
+ * @since 0.0.1
  */
 data class AcademicYearId(override val value: String) : EntityId<String> {
     init {

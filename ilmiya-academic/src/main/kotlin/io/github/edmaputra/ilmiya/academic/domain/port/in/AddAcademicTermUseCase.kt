@@ -8,6 +8,7 @@ import io.github.edmaputra.ilmiya.common.domain.TenantId
  * Inbound port for adding an academic term to an academic year.
  *
  * @author edmaputra
+ * @since 0.0.1
  */
 interface AddAcademicTermUseCase {
 

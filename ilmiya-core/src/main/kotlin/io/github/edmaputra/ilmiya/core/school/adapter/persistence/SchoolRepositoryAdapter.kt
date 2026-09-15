@@ -16,6 +16,7 @@ import java.time.DayOfWeek
  * Outbound persistence adapter implementing [SchoolRepository] using Spring Data JPA.
  *
  * @author edmaputra
+ * @since 0.0.1
  */
 @Repository
 class SchoolRepositoryAdapter(

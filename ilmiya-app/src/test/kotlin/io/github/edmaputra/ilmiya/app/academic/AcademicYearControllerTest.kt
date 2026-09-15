@@ -21,10 +21,17 @@ import org.springframework.http.MediaType
 import org.springframework.test.web.servlet.MockMvc
 import org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get
 import org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post
+import org.springframework.test.web.servlet.result.MockMvcResultMatchers.header
 import org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath
 import org.springframework.test.web.servlet.result.MockMvcResultMatchers.status
 import java.time.LocalDate
 
+/**
+ * Unit tests for AcademicYearController REST endpoints.
+ *
+ * @author edmaputra
+ * @since 0.0.1
+ */
 @WebMvcTest(AcademicYearController::class)
 class AcademicYearControllerTest {
 
@@ -74,9 +81,9 @@ class AcademicYearControllerTest {
                 )
         )
             .andExpect(status().isCreated)
-            .andExpect(jsonPath("$.success").value(true))
-            .andExpect(jsonPath("$.data.name").value("2026/2027"))
-            .andExpect(jsonPath("$.data.status").value("PLANNED"))
+            .andExpect(header().string("Location", "/api/v1/academic-years/year-123"))
+            .andExpect(jsonPath("$.name").value("2026/2027"))
+            .andExpect(jsonPath("$.status").value("PLANNED"))
     }
 
     @Test
@@ -108,8 +115,8 @@ class AcademicYearControllerTest {
                 )
         )
             .andExpect(status().isCreated)
-            .andExpect(jsonPath("$.success").value(true))
-            .andExpect(jsonPath("$.data.displayName").value("Semester Ganjil"))
+            .andExpect(header().string("Location", "/api/v1/academic-years/year-123/terms/term-1"))
+            .andExpect(jsonPath("$.displayName").value("Semester Ganjil"))
     }
 
     @Test
@@ -128,7 +135,6 @@ class AcademicYearControllerTest {
                 .header("X-Tenant-ID", "tenant-sch-01")
         )
             .andExpect(status().isOk)
-            .andExpect(jsonPath("$.success").value(true))
-            .andExpect(jsonPath("$.data[0].name").value("2026/2027"))
+            .andExpect(jsonPath("$[0].name").value("2026/2027"))
     }
 }

@@ -18,6 +18,7 @@ import java.time.LocalDate
  * Request payload for registering a new school and tenant.
  *
  * @author edmaputra
+ * @since 0.0.1
  */
 data class RegisterSchoolRequest(
     @field:NotBlank(message = "Tenant ID is required")
@@ -77,6 +78,7 @@ data class RegisterSchoolRequest(
  * Request payload for updating an existing school profile.
  *
  * @author edmaputra
+ * @since 0.0.1
  */
 data class UpdateSchoolRequest(
     @field:NotBlank(message = "School name is required")
@@ -119,6 +121,7 @@ data class UpdateSchoolRequest(
  * Request payload for updating school operational settings.
  *
  * @author edmaputra
+ * @since 0.0.1
  */
 data class ConfigureSchoolSettingsRequest(
     @field:NotEmpty(message = "At least one working day must be specified")
@@ -138,6 +141,7 @@ data class ConfigureSchoolSettingsRequest(
  * Response representation of a school institutional aggregate.
  *
  * @author edmaputra
+ * @since 0.0.1
  */
 data class SchoolResponse(
     val id: String,

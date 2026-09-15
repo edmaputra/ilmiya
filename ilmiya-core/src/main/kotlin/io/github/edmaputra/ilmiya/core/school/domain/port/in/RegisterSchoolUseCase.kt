@@ -6,6 +6,7 @@ import io.github.edmaputra.ilmiya.core.school.domain.School
  * Inbound port for provisioning a new school institution and initializing tenant boundaries.
  *
  * @author edmaputra
+ * @since 0.0.1
  */
 interface RegisterSchoolUseCase {
 

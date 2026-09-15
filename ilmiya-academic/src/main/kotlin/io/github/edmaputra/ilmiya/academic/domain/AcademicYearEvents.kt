@@ -12,6 +12,7 @@ import java.time.Instant
  * @property name academic year name
  * @property occurredOn event occurrence timestamp
  * @author edmaputra
+ * @since 0.0.1
  */
 data class AcademicYearCreatedEvent(
     val academicYearId: AcademicYearId,
@@ -27,6 +28,7 @@ data class AcademicYearCreatedEvent(
  * @property tenantId tenant boundary
  * @property occurredOn event occurrence timestamp
  * @author edmaputra
+ * @since 0.0.1
  */
 data class AcademicYearActivatedEvent(
     val academicYearId: AcademicYearId,
@@ -42,6 +44,7 @@ data class AcademicYearActivatedEvent(
  * @property tenantId tenant boundary
  * @property occurredOn event occurrence timestamp
  * @author edmaputra
+ * @since 0.0.1
  */
 data class AcademicTermAddedEvent(
     val academicYearId: AcademicYearId,

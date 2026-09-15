@@ -1,6 +1,6 @@
 -- Phase 1 schema migration: School institutions, operational settings, academic years and terms
 
-CREATE TABLE IF NOT EXISTS schools (
+CREATE TABLE IF NOT EXISTS core_schools (
     id VARCHAR(36) PRIMARY KEY,
     tenant_id VARCHAR(50) NOT NULL UNIQUE,
     name VARCHAR(200) NOT NULL,
@@ -18,12 +18,15 @@ CREATE TABLE IF NOT EXISTS schools (
     grading_preference VARCHAR(50) NOT NULL DEFAULT 'NUMERIC_0_100',
     term_layout VARCHAR(50) NOT NULL DEFAULT 'SEMESTER',
     status VARCHAR(50) NOT NULL DEFAULT 'ACTIVE',
+    version BIGINT NOT NULL DEFAULT 0,
     created_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT CURRENT_TIMESTAMP
+    updated_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    created_by UUID,
+    updated_by UUID
 );
 
-CREATE INDEX IF NOT EXISTS idx_schools_tenant_id ON schools(tenant_id);
-CREATE INDEX IF NOT EXISTS idx_schools_institution_code ON schools(institution_code);
+CREATE INDEX IF NOT EXISTS idx_core_schools_tenant_id ON core_schools(tenant_id);
+CREATE INDEX IF NOT EXISTS idx_core_schools_institution_code ON core_schools(institution_code);
 
 CREATE TABLE IF NOT EXISTS academic_years (
     id VARCHAR(36) PRIMARY KEY,
@@ -32,8 +35,11 @@ CREATE TABLE IF NOT EXISTS academic_years (
     start_date DATE NOT NULL,
     end_date DATE NOT NULL,
     status VARCHAR(50) NOT NULL DEFAULT 'PLANNED',
+    version BIGINT NOT NULL DEFAULT 0,
     created_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    created_by UUID,
+    updated_by UUID,
     CONSTRAINT uq_academic_years_tenant_name UNIQUE (tenant_id, name)
 );
 

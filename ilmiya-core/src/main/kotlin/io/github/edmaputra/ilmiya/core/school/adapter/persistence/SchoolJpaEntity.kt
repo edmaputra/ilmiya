@@ -4,16 +4,19 @@ import jakarta.persistence.Column
 import jakarta.persistence.Entity
 import jakarta.persistence.Id
 import jakarta.persistence.Table
+import jakarta.persistence.Version
 import java.time.Instant
 import java.time.LocalDate
+import java.util.UUID
 
 /**
  * JPA entity representing school institution record in the database.
  *
  * @author edmaputra
+ * @since 0.0.1
  */
 @Entity
-@Table(name = "schools")
+@Table(name = "core_schools")
 class SchoolJpaEntity(
     @Id
     @Column(name = "id", length = 36, nullable = false)
@@ -67,9 +70,28 @@ class SchoolJpaEntity(
     @Column(name = "status", length = 50, nullable = false)
     var status: String = "ACTIVE",
 
+    @Version
+    @Column(name = "version", nullable = false)
+    var version: Long = 0L,
+
     @Column(name = "created_at", nullable = false, updatable = false)
     var createdAt: Instant = Instant.now(),
 
     @Column(name = "updated_at", nullable = false)
-    var updatedAt: Instant = Instant.now()
-)
+    var updatedAt: Instant = Instant.now(),
+
+    @Column(name = "created_by")
+    var createdBy: UUID? = null,
+
+    @Column(name = "updated_by")
+    var updatedBy: UUID? = null
+) {
+    override fun equals(other: Any?): Boolean {
+        if (this === other) return true
+        if (other !is SchoolJpaEntity) return false
+        return id.isNotBlank() && id == other.id
+    }
+
+    override fun hashCode(): Int = id.hashCode()
+    override fun toString(): String = "SchoolJpaEntity(id='$id', name='$name', tenantId='$tenantId')"
+}

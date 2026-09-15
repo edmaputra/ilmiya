@@ -12,6 +12,7 @@ import java.time.LocalDate
  * @property startDate start date of the term
  * @property endDate end date of the term
  * @author edmaputra
+ * @since 0.0.1
  */
 data class AddAcademicTermCommand(
     val name: String,

@@ -8,6 +8,7 @@ import io.github.edmaputra.ilmiya.common.domain.TenantId
  * Inbound port for querying academic years for a tenant.
  *
  * @author edmaputra
+ * @since 0.0.1
  */
 interface GetAcademicYearsUseCase {
 

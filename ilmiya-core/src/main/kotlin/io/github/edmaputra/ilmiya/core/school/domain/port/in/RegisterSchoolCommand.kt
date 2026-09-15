@@ -18,6 +18,7 @@ import io.github.edmaputra.ilmiya.core.school.domain.OperationalSettings
  * @property accreditation initial accreditation status
  * @property operationalSettings initial operational configuration
  * @author edmaputra
+ * @since 0.0.1
  */
 data class RegisterSchoolCommand(
     val tenantId: String,

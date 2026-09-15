@@ -52,6 +52,7 @@ subprojects {
         // Testing
         "testImplementation"("org.junit.jupiter:junit-jupiter")
         "testImplementation"("org.assertj:assertj-core")
+        "testImplementation"("com.tngtech.archunit:archunit-junit5:1.4.1")
         "testImplementation"("io.mockk:mockk:1.13.17")
         "testImplementation"("com.ninja-squad:springmockk:4.0.2")
         "testImplementation"("org.mockito:mockito-core")

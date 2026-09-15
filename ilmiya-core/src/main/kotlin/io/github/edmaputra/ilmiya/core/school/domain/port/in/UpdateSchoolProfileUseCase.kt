@@ -7,6 +7,7 @@ import io.github.edmaputra.ilmiya.core.school.domain.School
  * Inbound port for updating institutional profile details.
  *
  * @author edmaputra
+ * @since 0.0.1
  */
 interface UpdateSchoolProfileUseCase {
 

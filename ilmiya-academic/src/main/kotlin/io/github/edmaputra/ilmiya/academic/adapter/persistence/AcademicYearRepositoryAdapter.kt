@@ -15,6 +15,7 @@ import org.springframework.stereotype.Repository
  * Outbound persistence adapter implementing [AcademicYearRepository] using Spring Data JPA.
  *
  * @author edmaputra
+ * @since 0.0.1
  */
 @Repository
 class AcademicYearRepositoryAdapter(

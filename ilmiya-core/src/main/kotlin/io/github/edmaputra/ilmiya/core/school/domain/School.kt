@@ -26,6 +26,7 @@ import java.time.Instant
  * @property createdAt timestamp of initial registration
  * @property updatedAt timestamp of latest modification
  * @author edmaputra
+ * @since 0.0.1
  */
 data class School(
     override val id: SchoolId,

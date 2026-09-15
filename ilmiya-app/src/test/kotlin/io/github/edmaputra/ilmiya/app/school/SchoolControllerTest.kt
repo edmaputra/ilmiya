@@ -16,9 +16,16 @@ import org.springframework.http.MediaType
 import org.springframework.test.web.servlet.MockMvc
 import org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get
 import org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post
+import org.springframework.test.web.servlet.result.MockMvcResultMatchers.header
 import org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath
 import org.springframework.test.web.servlet.result.MockMvcResultMatchers.status
 
+/**
+ * Controller unit test for school profile management and registration endpoints.
+ *
+ * @author edmaputra
+ * @since 0.0.1
+ */
 @WebMvcTest(SchoolController::class)
 class SchoolControllerTest {
 
@@ -66,9 +73,9 @@ class SchoolControllerTest {
                 )
         )
             .andExpect(status().isCreated)
-            .andExpect(jsonPath("$.success").value(true))
-            .andExpect(jsonPath("$.data.institutionCode").value("IIS-01"))
-            .andExpect(jsonPath("$.data.name").value("International Islamic School"))
+            .andExpect(header().string("Location", "/api/v1/schools/profile"))
+            .andExpect(jsonPath("$.institutionCode").value("IIS-01"))
+            .andExpect(jsonPath("$.name").value("International Islamic School"))
     }
 
     @Test
@@ -89,7 +96,6 @@ class SchoolControllerTest {
                 .header("X-Tenant-ID", "tenant-sch-01")
         )
             .andExpect(status().isOk)
-            .andExpect(jsonPath("$.success").value(true))
-            .andExpect(jsonPath("$.data.tenantId").value("tenant-sch-01"))
+            .andExpect(jsonPath("$.tenantId").value("tenant-sch-01"))
     }
 }

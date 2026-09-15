@@ -9,6 +9,7 @@ import java.time.LocalDate
  * @property accreditingBody the name of the granting organization (e.g., "BAN-S/M", "Cambridge", "Cognia")
  * @property validUntil the expiration date of current accreditation status
  * @author edmaputra
+ * @since 0.0.1
  */
 data class Accreditation(
     val status: String,

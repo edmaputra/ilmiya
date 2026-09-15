@@ -12,6 +12,7 @@ import java.time.DayOfWeek
  * @property gradingPreference institutional grading score preference
  * @property termLayout default academic term structure
  * @author edmaputra
+ * @since 0.0.1
  */
 data class ConfigureSchoolSettingsCommand(
     val workingDays: Set<DayOfWeek>,

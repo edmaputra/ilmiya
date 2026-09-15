@@ -10,6 +10,7 @@ import java.time.LocalDate
  * JPA entity representing an academic term/semester.
  *
  * @author edmaputra
+ * @since 0.0.1
  */
 @Entity
 @Table(name = "academic_terms")
@@ -38,4 +39,13 @@ class AcademicTermJpaEntity(
 
     @Column(name = "status", length = 50, nullable = false)
     var status: String = "PLANNED"
-)
+) {
+    override fun equals(other: Any?): Boolean {
+        if (this === other) return true
+        if (other !is AcademicTermJpaEntity) return false
+        return id.isNotBlank() && id == other.id
+    }
+
+    override fun hashCode(): Int = id.hashCode()
+    override fun toString(): String = "AcademicTermJpaEntity(id='$id', name='$name', termType='$termType')"
+}

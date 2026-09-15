@@ -7,6 +7,7 @@ import java.util.Optional
  * Spring Data JPA repository for school persistence entities.
  *
  * @author edmaputra
+ * @since 0.0.1
  */
 interface SpringDataSchoolRepository : JpaRepository<SchoolJpaEntity, String> {
 
