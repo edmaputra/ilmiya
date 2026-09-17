@@ -8,6 +8,8 @@ and this project adheres to [Semantic Versioning (v2.0.0)](https://semver.org/sp
 ## [Unreleased]
 
 ### Added
+- Root `AGENTS.md` AI agent guide conforming to `ed-agent-standards` multi-module Hexagonal Architecture template.
+- Outbound persistence and event publishing ports (`SchoolRepository`, `SchoolEventPublisher`, `AcademicYearRepository`, `AcademicYearEventPublisher`).
 - Phase 1 School Profile and Academic Year management:
   - Institutional profiles with multi-tenant isolation, accreditation details, operational schedules, and international registration types.
   - Academic calendar configuration with academic years, terms/semesters, and activation workflows.
@@ -19,11 +21,16 @@ and this project adheres to [Semantic Versioning (v2.0.0)](https://semver.org/sp
 - Hexagonal architecture boundary enforcement with ArchUnit test suite.
 
 ### Changed
+- Updated `ed-agent-standards` submodule to latest commit with multi-stack structure (`rules/java-kotlin/`, `rules/shared/`) and automated structure scanner.
+- Updated `README.md` documentation links reflecting the stack-based rule structure.
 - Upgraded `ed-iam` starter library to `0.2.0`, integrating enhanced `OperationContext` and `ActorType` (`USER`, `SYSTEM`, `MACHINE`) extensions for actor scoping and auditing.
 - Migrated codebase to idiomatic Kotlin targeting Java 25 and Spring Boot 4.1.1.
 - REST endpoints now return direct domain DTOs without wrapper envelopes, aligning with API conventions.
 - Global exception handling refactored to emit RFC 9457 `ProblemDetail` payloads.
 - Database schema and JPA entities standardized with `{module}_*` table names (`core_schools`, `academic_years`), `@Version` optimistic locking, and actor audit columns (`created_by`, `updated_by`).
+
+### Fixed
+- Scoped IDE `/out/` and `/bin/` in `.gitignore` to root level to prevent accidental exclusion of source packages like `port/out/`.
 
 ### Security
 - Stateless JWT authentication filter pipeline with deny-by-default endpoint authorization.
