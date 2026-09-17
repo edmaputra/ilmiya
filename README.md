@@ -63,9 +63,18 @@ Once running, access Swagger UI at:
 
 ---
 
-## Documentation
+## Documentation & Standards
 
 - [Features and Roadmap](docs/01-features-and-roadmap.md)
-- [Clean Code Standards](.agents/rules/clean-code.md)
-- [Hexagonal Architecture Rules](.agents/rules/hexagonal-architecture.md)
-- [Multi-Tenancy & Audit Trail Rules](.agents/rules/multi-tenancy-and-audit.md)
+- [Agent Guide (AGENTS.md)](AGENTS.md)
+- [Clean Code Standards](.agents/rules/java-kotlin/clean-code.md)
+- [Hexagonal Architecture Rules](.agents/rules/java-kotlin/hexagonal-architecture.md)
+- [Multi-Tenancy & Audit Trail Rules](.agents/rules/java-kotlin/multi-tenancy-and-audit.md)
+- [Kotlin Standards](.agents/rules/java-kotlin/kotlin-standards.md)
+- [RESTful API Conventions](.agents/rules/java-kotlin/api-conventions.md)
+- [Database & Migration Standards](.agents/rules/java-kotlin/database-standards.md)
+- [Security Standards](.agents/rules/java-kotlin/security-standards.md)
+- [Logging & Observability](.agents/rules/java-kotlin/logging-and-observability.md)
+- [Git & CI/CD Standards](.agents/rules/shared/git-and-ci-standards.md)
+- [Project Structure & Scanner](.agents/rules/shared/project-structure-standards.md)
+

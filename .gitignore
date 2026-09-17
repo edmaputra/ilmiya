@@ -26,12 +26,12 @@ replay_pid*
 *.iml
 *.iws
 *.ipr
-out/
+/out/
 .vscode/
 .classpath
 .project
 .settings/
-bin/
+/bin/
 
 # Environment / Local settings
 .env
@@ -43,3 +43,9 @@ application-local.properties
 # OS files
 .DS_Store
 Thumbs.db
+
+# AI Agent runtime artifacts
+project-structure.json
+.project-structure.json
+.agents/project-structure.json
+
