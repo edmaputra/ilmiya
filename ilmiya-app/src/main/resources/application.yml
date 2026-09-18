@@ -50,3 +50,16 @@ logging:
   level:
     root: INFO
     io.github.edmaputra.ilmiya: DEBUG
+
+---
+spring:
+  config:
+    activate:
+      on-profile: local
+  datasource:
+    url: ${SPRING_DATASOURCE_URL:jdbc:postgresql://localhost:5543/ilmiya_db}
+
+ilmiya:
+  seed:
+    enabled: true
+

@@ -1,5 +1,12 @@
 package io.github.edmaputra.ilmiya.app.seed
 
+import io.github.edmaputra.iam.application.port.`in`.ManageRoleUseCase
+import io.github.edmaputra.iam.application.port.`in`.ManageUserUseCase
+import io.github.edmaputra.iam.application.port.`in`.RoleCommands
+import io.github.edmaputra.iam.application.port.`in`.UserCommands
+import io.github.edmaputra.iam.domain.repository.RoleRepository
+import io.github.edmaputra.iam.domain.repository.UserRepository
+import io.github.edmaputra.iam.domain.tenancy.TenantId as IamTenantId
 import io.github.edmaputra.ilmiya.academic.domain.AcademicTermType
 import io.github.edmaputra.ilmiya.academic.domain.port.`in`.ActivateAcademicTermUseCase
 import io.github.edmaputra.ilmiya.academic.domain.port.`in`.ActivateAcademicYearUseCase
@@ -16,6 +23,7 @@ import io.github.edmaputra.ilmiya.core.school.domain.TermLayout
 import io.github.edmaputra.ilmiya.core.school.domain.port.`in`.RegisterSchoolCommand
 import io.github.edmaputra.ilmiya.core.school.domain.port.`in`.RegisterSchoolUseCase
 import io.github.edmaputra.ilmiya.core.school.domain.port.out.SchoolRepository
+import io.github.edmaputra.ilmiya.core.security.IlmiyaPermissions
 import org.slf4j.LoggerFactory
 import org.springframework.boot.ApplicationArguments
 import org.springframework.boot.ApplicationRunner
@@ -27,7 +35,7 @@ import java.time.LocalDate
 
 /**
  * Local environment data seeder that initializes baseline development entities
- * (School, Operational Settings, Academic Year, and Terms).
+ * (School, Operational Settings, Academic Year, Terms) and IAM seed data (Roles, Users, Role Assignments).
  *
  * Runs exclusively when the 'local' profile is active and 'ilmiya.seed.enabled' is true.
  *
@@ -43,20 +51,38 @@ class LocalDataSeeder(
     private val createAcademicYearUseCase: CreateAcademicYearUseCase,
     private val activateAcademicYearUseCase: ActivateAcademicYearUseCase,
     private val addAcademicTermUseCase: AddAcademicTermUseCase,
-    private val activateAcademicTermUseCase: ActivateAcademicTermUseCase
+    private val activateAcademicTermUseCase: ActivateAcademicTermUseCase,
+    private val manageUserUseCase: ManageUserUseCase,
+    private val manageRoleUseCase: ManageRoleUseCase,
+    private val userRepository: UserRepository,
+    private val roleRepository: RoleRepository
 ) : ApplicationRunner {
 
     private val log = LoggerFactory.getLogger(javaClass)
 
-    override fun run(args: ApplicationArguments) {
-        val tenantId = TenantId.of("tenant-springfield")
+    companion object {
+        const val SAMPLE_TENANT_ID = "01940000-0000-7000-8000-000000000001"
+        const val ADMIN_EMAIL = "admin@springfield.local"
+        const val ADMIN_PASSWORD = "Password123!"
+        const val SUPERADMIN_EMAIL = "superadmin@ilmiya.local"
+        const val SUPERADMIN_PASSWORD = "Password123!"
+    }
 
+    override fun run(args: ApplicationArguments) {
+        val tenantId = TenantId.of(SAMPLE_TENANT_ID)
+        val iamTenantId = IamTenantId.from(SAMPLE_TENANT_ID)
+
+        seedSchoolDomainData(tenantId)
+        seedIamData(iamTenantId)
+    }
+
+    private fun seedSchoolDomainData(tenantId: TenantId) {
         if (schoolRepository.existsByTenantId(tenantId)) {
-            log.info("Seed data for tenant '{}' already exists. Skipping local data seeding.", tenantId.value)
+            log.info("School domain seed data for tenant '{}' already exists. Skipping.", tenantId.value)
             return
         }
 
-        log.info("Starting local environment data seeding for tenant '{}'...", tenantId.value)
+        log.info("Starting local school domain data seeding for tenant '{}'...", tenantId.value)
 
         // 1. Register School
         val school = registerSchoolUseCase.register(
@@ -67,7 +93,7 @@ class LocalDataSeeder(
                 governmentRegistrationNumber = "NPSN-10020030",
                 registrationType = "NPSN",
                 address = "742 Evergreen Terrace, Springfield",
-                contactEmail = "admin@springfield.local",
+                contactEmail = ADMIN_EMAIL,
                 contactPhone = "+1-555-0199",
                 accreditation = Accreditation.UNACCREDITED,
                 operationalSettings = OperationalSettings(
@@ -125,7 +151,106 @@ class LocalDataSeeder(
             )
             log.info("Added planned term '{}' (ID: {})", term2.displayName, term2.id.value)
 
-            log.info("Local environment data seeding completed successfully for tenant '{}'.", tenantId.value)
+            log.info("School domain data seeding completed successfully for tenant '{}'.", tenantId.value)
+        }
+    }
+
+    private fun seedIamData(iamTenantId: IamTenantId) {
+        log.info("Checking local IAM seed data...")
+
+        val schoolAdminPermissions = setOf(
+            IlmiyaPermissions.SCHOOL_PROFILE_READ,
+            IlmiyaPermissions.SCHOOL_PROFILE_WRITE,
+            IlmiyaPermissions.SCHOOL_SETTINGS_MANAGE,
+            IlmiyaPermissions.ACADEMIC_YEAR_READ,
+            IlmiyaPermissions.ACADEMIC_YEAR_WRITE,
+            IlmiyaPermissions.CURRICULUM_READ,
+            IlmiyaPermissions.CURRICULUM_MANAGE,
+            IlmiyaPermissions.COURSE_READ,
+            IlmiyaPermissions.COURSE_WRITE,
+            IlmiyaPermissions.STUDENT_PROFILE_READ,
+            IlmiyaPermissions.STUDENT_PROFILE_WRITE,
+            IlmiyaPermissions.STUDENT_ENROLLMENT_MANAGE,
+            IlmiyaPermissions.GUARDIAN_LINK_MANAGE,
+            IlmiyaPermissions.ATTENDANCE_READ,
+            IlmiyaPermissions.ATTENDANCE_RECORD,
+            IlmiyaPermissions.ATTENDANCE_MODIFY,
+            IlmiyaPermissions.ATTENDANCE_APPROVE,
+            IlmiyaPermissions.STAFF_PROFILE_READ,
+            IlmiyaPermissions.STAFF_PROFILE_WRITE,
+            IlmiyaPermissions.TEACHER_ASSIGNMENT_MANAGE,
+            IlmiyaPermissions.TIMETABLE_READ,
+            IlmiyaPermissions.TIMETABLE_MANAGE,
+            IlmiyaPermissions.EXAM_SCHEDULE_READ,
+            IlmiyaPermissions.EXAM_SCHEDULE_MANAGE,
+            IlmiyaPermissions.GRADE_ENTRY,
+            IlmiyaPermissions.GRADE_MODIFY,
+            IlmiyaPermissions.REPORT_CARD_PUBLISH,
+            IlmiyaPermissions.FEE_STRUCTURE_MANAGE,
+            IlmiyaPermissions.INVOICE_CREATE,
+            IlmiyaPermissions.PAYMENT_RECORD,
+            IlmiyaPermissions.FINANCIAL_REPORT_READ,
+            "school:*",
+            "academic:*",
+            "student:*",
+            "attendance:*",
+            "hr:*",
+            "timetable:*",
+            "exam:*",
+            "finance:*"
+        )
+
+        // 1. Seed School Admin Role and User
+        if (!userRepository.existsByEmail(ADMIN_EMAIL)) {
+            val role = if (!roleRepository.existsByTenantIdAndCode(iamTenantId, "SCHOOL_ADMIN")) {
+                manageRoleUseCase.createRole(
+                    RoleCommands.CreateRoleCommand(
+                        iamTenantId,
+                        "SCHOOL_ADMIN",
+                        "School Administrator",
+                        "Full administrative access for the school tenant",
+                        schoolAdminPermissions
+                    )
+                )
+            } else {
+                roleRepository.findByTenantIdAndCode(iamTenantId, "SCHOOL_ADMIN").orElseThrow()
+            }
+
+            val adminUser = manageUserUseCase.createUser(
+                UserCommands.CreateUserCommand(
+                    ADMIN_EMAIL,
+                    ADMIN_PASSWORD,
+                    "Springfield Admin",
+                    false
+                )
+            )
+
+            manageUserUseCase.assignRole(
+                UserCommands.AssignUserRoleCommand(
+                    adminUser.id,
+                    role.id,
+                    iamTenantId,
+                    null
+                )
+            )
+            log.info("Provisioned local IAM admin user '{}' with role '{}'", ADMIN_EMAIL, role.code)
+        } else {
+            log.info("Local IAM admin user '{}' already exists. Skipping.", ADMIN_EMAIL)
+        }
+
+        // 2. Seed Platform Super Admin User
+        if (!userRepository.existsByEmail(SUPERADMIN_EMAIL)) {
+            manageUserUseCase.createUser(
+                UserCommands.CreateUserCommand(
+                    SUPERADMIN_EMAIL,
+                    SUPERADMIN_PASSWORD,
+                    "Platform Super Admin",
+                    true
+                )
+            )
+            log.info("Provisioned local IAM platform superadmin user '{}'", SUPERADMIN_EMAIL)
+        } else {
+            log.info("Local IAM platform superadmin user '{}' already exists. Skipping.", SUPERADMIN_EMAIL)
         }
     }
 }

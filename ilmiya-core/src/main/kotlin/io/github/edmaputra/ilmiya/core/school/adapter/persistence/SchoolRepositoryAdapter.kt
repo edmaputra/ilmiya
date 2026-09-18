@@ -24,7 +24,30 @@ class SchoolRepositoryAdapter(
 ) : SchoolRepository {
 
     override fun save(school: School): School {
-        val entity = toEntity(school)
+        val existingOpt = springDataRepository.findById(school.id.value)
+        val entity = if (existingOpt.isPresent) {
+            val existing = existingOpt.get()
+            existing.tenantId = school.tenantId.value
+            existing.name = school.name
+            existing.institutionCode = school.institutionCode
+            existing.governmentRegistrationNumber = school.governmentRegistrationNumber
+            existing.registrationType = school.registrationType
+            existing.address = school.address
+            existing.contactEmail = school.contactEmail
+            existing.contactPhone = school.contactPhone
+            existing.logoUrl = school.logoUrl
+            existing.accreditationStatus = school.accreditation.status
+            existing.accreditationBody = school.accreditation.accreditingBody
+            existing.accreditationValidUntil = school.accreditation.validUntil
+            existing.workingDays = school.operationalSettings.workingDays.joinToString(",") { it.name }
+            existing.gradingPreference = school.operationalSettings.gradingPreference.name
+            existing.termLayout = school.operationalSettings.termLayout.name
+            existing.status = school.status.name
+            existing.updatedAt = school.updatedAt
+            existing
+        } else {
+            toEntity(school)
+        }
         val saved = springDataRepository.save(entity)
         return toDomain(saved)
     }
