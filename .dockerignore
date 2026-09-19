@@ -1,0 +1,17 @@
+.git
+.gradle
+.idea
+.vscode
+build
+*/build
+out
+*.log
+*.env
+application-local.yml
+application-local.properties
+.DS_Store
+Thumbs.db
+project-structure.json
+.project-structure.json
+.agents
+docs

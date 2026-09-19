@@ -47,14 +47,30 @@ For the full product vision, target market segments, and roadmap breakdown, see:
 - JDK 25
 - Docker & Docker Compose (for PostgreSQL)
 
+### Start Infrastructure (PostgreSQL)
+```bash
+# Start PostgreSQL database container
+docker compose up -d postgres
+
+# (Optional) Start with pgAdmin web UI at http://localhost:5050
+docker compose --profile tools up -d
+```
+
 ### Build & Run Tests
 ```bash
 ./gradlew check
 ```
 
 ### Run Application
+
+**Option A: Run with Gradle (Local Profile & Seed Data)**:
 ```bash
-./gradlew :ilmiya-app:bootRun
+./gradlew :ilmiya-app:bootRun --args='--spring.profiles.active=local'
+```
+
+**Option B: Run Entire Stack via Docker Compose**:
+```bash
+docker compose up -d --build
 ```
 
 Once running, access Swagger UI at:

@@ -23,7 +23,32 @@ class AcademicYearRepositoryAdapter(
 ) : AcademicYearRepository {
 
     override fun save(academicYear: AcademicYear): AcademicYear {
-        val entity = toEntity(academicYear)
+        val existingOpt = springDataRepository.findById(academicYear.id.value)
+        val entity = if (existingOpt.isPresent) {
+            val existing = existingOpt.get()
+            existing.tenantId = academicYear.tenantId.value
+            existing.name = academicYear.name
+            existing.startDate = academicYear.startDate
+            existing.endDate = academicYear.endDate
+            existing.status = academicYear.status.name
+            existing.updatedAt = academicYear.updatedAt
+            existing.terms.clear()
+            existing.terms.addAll(academicYear.terms.map { term ->
+                AcademicTermJpaEntity(
+                    id = term.id.value,
+                    academicYearId = academicYear.id.value,
+                    name = term.name,
+                    termType = term.type.name,
+                    displayName = term.displayName,
+                    startDate = term.startDate,
+                    endDate = term.endDate,
+                    status = term.status.name
+                )
+            })
+            existing
+        } else {
+            toEntity(academicYear)
+        }
         val saved = springDataRepository.save(entity)
         return toDomain(saved)
     }
