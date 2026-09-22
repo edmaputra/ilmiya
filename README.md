@@ -82,6 +82,7 @@ Once running, access Swagger UI at:
 ## Documentation & Standards
 
 - [Features and Roadmap](docs/01-features-and-roadmap.md)
+- [How-To Guides (Operational Runbooks)](docs/how-to/README.md)
 - [Agent Guide (AGENTS.md)](AGENTS.md)
 - [Clean Code Standards](.agents/rules/java-kotlin/clean-code.md)
 - [Hexagonal Architecture Rules](.agents/rules/java-kotlin/hexagonal-architecture.md)
