@@ -76,8 +76,9 @@ class SchoolRepositoryAdapterTest {
     )
 
     @Test
-    fun `save should map domain to entity, save to spring data repository, and map back to domain`() {
+    fun `save when school does not exist should map domain to new entity, save to spring data repository, and map back to domain`() {
         val entitySlot = slot<SchoolJpaEntity>()
+        every { springDataRepository.findById(schoolId.value) } returns Optional.empty()
         every { springDataRepository.save(capture(entitySlot)) } returns sampleJpaEntity
 
         val result = adapter.save(sampleDomainSchool)
@@ -95,7 +96,47 @@ class SchoolRepositoryAdapterTest {
         assertThat(result.operationalSettings.workingDays).containsExactlyInAnyOrder(
             DayOfWeek.MONDAY, DayOfWeek.TUESDAY, DayOfWeek.WEDNESDAY
         )
+        verify(exactly = 1) { springDataRepository.findById(schoolId.value) }
         verify(exactly = 1) { springDataRepository.save(any()) }
+    }
+
+    @Test
+    fun `save when school already exists should update existing entity, save to spring data repository, and map back to domain`() {
+        val existingEntity = SchoolJpaEntity(
+            id = schoolId.value,
+            tenantId = "old-tenant",
+            name = "Old School",
+            institutionCode = "OLD01",
+            governmentRegistrationNumber = "OLD-REG",
+            registrationType = "NPSN",
+            address = "Old Address",
+            contactEmail = "old@school.com",
+            contactPhone = "000-000",
+            logoUrl = null,
+            accreditationStatus = "B",
+            accreditationBody = "BAN",
+            accreditationValidUntil = LocalDate.of(2028, 1, 1),
+            workingDays = "MONDAY",
+            gradingPreference = "PERCENTAGE_0_100",
+            termLayout = "TRIMESTER",
+            status = "PENDING_APPROVAL"
+        )
+
+        every { springDataRepository.findById(schoolId.value) } returns Optional.of(existingEntity)
+        every { springDataRepository.save(existingEntity) } returns existingEntity
+
+        val result = adapter.save(sampleDomainSchool)
+
+        assertThat(existingEntity.name).isEqualTo("Global School")
+        assertThat(existingEntity.tenantId).isEqualTo(tenantId.value)
+        assertThat(existingEntity.institutionCode).isEqualTo("GS01")
+        assertThat(existingEntity.workingDays).isEqualTo("MONDAY,TUESDAY,WEDNESDAY")
+        assertThat(existingEntity.status).isEqualTo("ACTIVE")
+
+        assertThat(result.id).isEqualTo(schoolId)
+        assertThat(result.name).isEqualTo("Global School")
+        verify(exactly = 1) { springDataRepository.findById(schoolId.value) }
+        verify(exactly = 1) { springDataRepository.save(existingEntity) }
     }
 
     @Test

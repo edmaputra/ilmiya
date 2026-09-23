@@ -74,8 +74,9 @@ class AcademicYearRepositoryAdapterTest {
     }
 
     @Test
-    fun `save should map domain to entity, save to repository, and map back to domain`() {
+    fun `save when academic year does not exist should map domain to new entity, save to repository, and map back to domain`() {
         val entitySlot = slot<AcademicYearJpaEntity>()
+        every { springDataRepository.findById(yearId.value) } returns Optional.empty()
         every { springDataRepository.save(capture(entitySlot)) } returns sampleYearEntity
 
         val result = adapter.save(sampleYear)
@@ -92,7 +93,50 @@ class AcademicYearRepositoryAdapterTest {
         assertThat(result.name).isEqualTo("2026/2027")
         assertThat(result.terms).hasSize(1)
         assertThat(result.terms[0].name).isEqualTo("Semester 1")
+        verify(exactly = 1) { springDataRepository.findById(yearId.value) }
         verify(exactly = 1) { springDataRepository.save(any()) }
+    }
+
+    @Test
+    fun `save when academic year already exists should update existing entity, save to repository, and map back to domain`() {
+        val existingEntity = AcademicYearJpaEntity(
+            id = yearId.value,
+            tenantId = "old-tenant",
+            name = "Old Year",
+            startDate = LocalDate.of(2025, 7, 1),
+            endDate = LocalDate.of(2026, 6, 30),
+            status = "PLANNED"
+        ).apply {
+            terms = mutableListOf(
+                AcademicTermJpaEntity(
+                    id = "old-term",
+                    academicYearId = yearId.value,
+                    name = "Old Term",
+                    termType = "SEMESTER_1",
+                    displayName = "Old Display",
+                    startDate = LocalDate.of(2025, 7, 1),
+                    endDate = LocalDate.of(2025, 12, 31),
+                    status = "PLANNED"
+                )
+            )
+        }
+
+        every { springDataRepository.findById(yearId.value) } returns Optional.of(existingEntity)
+        every { springDataRepository.save(existingEntity) } returns existingEntity
+
+        val result = adapter.save(sampleYear)
+
+        assertThat(existingEntity.name).isEqualTo("2026/2027")
+        assertThat(existingEntity.tenantId).isEqualTo(tenantId.value)
+        assertThat(existingEntity.status).isEqualTo(AcademicYearStatus.ACTIVE.name)
+        assertThat(existingEntity.terms).hasSize(1)
+        assertThat(existingEntity.terms[0].id).isEqualTo(termId.value)
+        assertThat(existingEntity.terms[0].name).isEqualTo("Semester 1")
+
+        assertThat(result.id).isEqualTo(yearId)
+        assertThat(result.name).isEqualTo("2026/2027")
+        verify(exactly = 1) { springDataRepository.findById(yearId.value) }
+        verify(exactly = 1) { springDataRepository.save(existingEntity) }
     }
 
     @Test
