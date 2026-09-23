@@ -40,6 +40,8 @@ Dependencies flow **strictly inward**: `adapter` ➔ `application` ➔ `domain`.
 ## Key Commands
 - Build: `./gradlew build`
 - Unit & Architecture Tests: `./gradlew check`
+- Generate Coverage Report: `./gradlew jacocoAggregateReport`
+- Parse Coverage Summary: `python3 .agents/scripts/coverage/generate-jacoco-summary.py`
 - Run Application: `./gradlew :ilmiya-app:bootRun`
 - Refresh Structure Map: `python3 .agents/scripts/scan-structure.py --force`
 
@@ -51,8 +53,9 @@ Dependencies flow **strictly inward**: `adapter` ➔ `application` ➔ `domain`.
 - 🔴 **MUST**: NEVER import Spring, JPA, or Web dependencies inside `domain/`.
 - 🔴 **MUST**: Follow Conventional Commits format (`feat`, `fix`, `chore`, etc.) as defined in [`.agents/rules/shared/git-and-ci-standards.md`](.agents/rules/shared/git-and-ci-standards.md).
 - 🔴 **MUST**: All domain identifiers must use type-safe `EntityId` / `TenantId` patterns.
+- 🔴 **MUST**: Maintain minimum 80% line coverage for domain and application business logic as mandated by CI standards.
 - 🔴 **MUST**: Ensure `project-structure.json` is ignored by Git and kept out of commits.
-- 🟡 **SHOULD**: Run `./gradlew check` before concluding code modifications to verify unit and ArchUnit tests pass.
+- 🟡 **SHOULD**: Run `./gradlew check jacocoAggregateReport` before concluding code modifications to verify unit tests, ArchUnit rules, and code coverage.
 
 ---
 

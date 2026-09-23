@@ -108,4 +108,92 @@ class SchoolTest {
         assertThat(events).hasSize(1)
         assertThat(events.first()).isInstanceOf(SchoolSettingsConfiguredEvent::class.java)
     }
+
+    @Test
+    fun `should correctly populate auditableFields map`() {
+        val school = School.create(
+            tenantId = tenantId,
+            name = "International Islamic School",
+            institutionCode = "IIS-01",
+            governmentRegistrationNumber = "NPSN123",
+            registrationType = "NPSN",
+            address = "Jl. Pendidikan No. 1",
+            contactEmail = "admin@iis.edu",
+            contactPhone = "+628123456789",
+            accreditation = Accreditation(status = "A")
+        )
+
+        val auditable = school.auditableFields()
+        assertThat(auditable["schoolId"]).isEqualTo(school.id.value)
+        assertThat(auditable["tenantId"]).isEqualTo(tenantId.value)
+        assertThat(auditable["name"]).isEqualTo("International Islamic School")
+        assertThat(auditable["institutionCode"]).isEqualTo("IIS-01")
+        assertThat(auditable["governmentRegistrationNumber"]).isEqualTo("NPSN123")
+        assertThat(auditable["registrationType"]).isEqualTo("NPSN")
+        assertThat(auditable["address"]).isEqualTo("Jl. Pendidikan No. 1")
+        assertThat(auditable["contactEmail"]).isEqualTo("admin@iis.edu")
+        assertThat(auditable["contactPhone"]).isEqualTo("+628123456789")
+        assertThat(auditable["accreditationStatus"]).isEqualTo("A")
+        assertThat(auditable["status"]).isEqualTo("ACTIVE")
+    }
+
+    @Test
+    fun `should throw exception when institution code is blank`() {
+        assertThatThrownBy {
+            School.create(
+                tenantId = tenantId,
+                name = "School",
+                institutionCode = "   ",
+                address = "Jl. 1",
+                contactEmail = "admin@iis.edu",
+                contactPhone = "123"
+            )
+        }.isInstanceOf(IllegalArgumentException::class.java)
+            .hasMessageContaining("Institution code must not be blank")
+    }
+
+    @Test
+    fun `should throw exception when address is blank`() {
+        assertThatThrownBy {
+            School.create(
+                tenantId = tenantId,
+                name = "School",
+                institutionCode = "SCH",
+                address = "   ",
+                contactEmail = "admin@iis.edu",
+                contactPhone = "123"
+            )
+        }.isInstanceOf(IllegalArgumentException::class.java)
+            .hasMessageContaining("School address must not be blank")
+    }
+
+    @Test
+    fun `should throw exception when contact email is blank`() {
+        assertThatThrownBy {
+            School.create(
+                tenantId = tenantId,
+                name = "School",
+                institutionCode = "SCH",
+                address = "Jl. 1",
+                contactEmail = "   ",
+                contactPhone = "123"
+            )
+        }.isInstanceOf(IllegalArgumentException::class.java)
+            .hasMessageContaining("Contact email must not be blank")
+    }
+
+    @Test
+    fun `should throw exception when contact phone is blank`() {
+        assertThatThrownBy {
+            School.create(
+                tenantId = tenantId,
+                name = "School",
+                institutionCode = "SCH",
+                address = "Jl. 1",
+                contactEmail = "admin@iis.edu",
+                contactPhone = "   "
+            )
+        }.isInstanceOf(IllegalArgumentException::class.java)
+            .hasMessageContaining("Contact phone must not be blank")
+    }
 }

@@ -1,5 +1,6 @@
 plugins {
     java
+    jacoco
     kotlin("jvm") version "2.3.21" apply false
     kotlin("plugin.spring") version "2.3.21" apply false
     kotlin("plugin.jpa") version "2.3.21" apply false
@@ -22,7 +23,12 @@ subprojects {
     apply(plugin = "org.jetbrains.kotlin.plugin.spring")
     apply(plugin = "org.jetbrains.kotlin.plugin.jpa")
     apply(plugin = "java-library")
+    apply(plugin = "jacoco")
     apply(plugin = "io.spring.dependency-management")
+
+    jacoco {
+        toolVersion = "0.8.14"
+    }
 
     java {
         toolchain {
@@ -78,7 +84,87 @@ subprojects {
         )
     }
 
+    val jacocoExclusions = listOf(
+        "**/config/**",
+        "**/*Application*.*",
+        "**/*MapperImpl*.*"
+    )
+
     tasks.withType<Test> {
         useJUnitPlatform()
+        finalizedBy("jacocoTestReport")
+    }
+
+    tasks.named<JacocoReport>("jacocoTestReport") {
+        dependsOn(tasks.withType<Test>())
+        reports {
+            xml.required.set(true)
+            csv.required.set(true)
+            html.required.set(true)
+        }
+        classDirectories.setFrom(
+            classDirectories.files.map {
+                fileTree(it) {
+                    exclude(jacocoExclusions)
+                }
+            }
+        )
     }
 }
+
+jacoco {
+    toolVersion = "0.8.14"
+}
+
+val aggregateJacocoExclusions = listOf(
+    "**/config/**",
+    "**/*Application*.*",
+    "**/*MapperImpl*.*"
+)
+
+tasks.register<JacocoReport>("jacocoAggregateReport") {
+    group = "verification"
+    description = "Generates aggregate JaCoCo coverage report across all subprojects."
+
+    dependsOn(subprojects.map { it.tasks.withType<Test>() })
+    dependsOn(subprojects.map { it.tasks.withType<JacocoReport>() })
+
+    val allSourceDirs = subprojects.flatMap { subproject ->
+        val sourceSets = subproject.extensions.findByType<SourceSetContainer>()
+        sourceSets?.named("main")?.get()?.allSource?.srcDirs ?: emptySet()
+    }
+    sourceDirectories.setFrom(files(allSourceDirs))
+
+    val allClassesDirs = subprojects.flatMap { subproject ->
+        val sourceSets = subproject.extensions.findByType<SourceSetContainer>()
+        sourceSets?.named("main")?.get()?.output?.classesDirs?.files ?: emptySet()
+    }
+    classDirectories.setFrom(
+        allClassesDirs.map { dir ->
+            fileTree(dir) {
+                exclude(aggregateJacocoExclusions)
+            }
+        }
+    )
+
+    executionData.setFrom(
+        files(
+            provider {
+                subprojects.mapNotNull { subproject ->
+                    val exec = subproject.layout.buildDirectory.file("jacoco/test.exec").get().asFile
+                    if (exec.exists()) exec else null
+                }
+            }
+        )
+    )
+
+    reports {
+        xml.required.set(true)
+        csv.required.set(true)
+        html.required.set(true)
+        xml.outputLocation.set(layout.buildDirectory.file("reports/jacoco/aggregate/jacoco.xml"))
+        csv.outputLocation.set(layout.buildDirectory.file("reports/jacoco/aggregate/jacoco.csv"))
+        html.outputLocation.set(layout.buildDirectory.dir("reports/jacoco/aggregate/html"))
+    }
+}
+
