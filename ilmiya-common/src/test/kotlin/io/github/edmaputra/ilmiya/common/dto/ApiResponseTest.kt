@@ -24,4 +24,22 @@ class ApiResponseTest {
         assertThat(response.data).isNull()
         assertThat(response.errors).containsExactly("Error 1", "Error 2")
     }
+
+    @Test
+    fun `should create error response with default null errors`() {
+        val response = ApiResponse.error<String>("Failed")
+
+        assertThat(response.success).isFalse()
+        assertThat(response.message).isEqualTo("Failed")
+        assertThat(response.errors).isNull()
+    }
+
+    @Test
+    fun `should create ok response with custom message`() {
+        val response = ApiResponse.ok("test-data", "Custom OK")
+
+        assertThat(response.success).isTrue()
+        assertThat(response.message).isEqualTo("Custom OK")
+        assertThat(response.data).isEqualTo("test-data")
+    }
 }

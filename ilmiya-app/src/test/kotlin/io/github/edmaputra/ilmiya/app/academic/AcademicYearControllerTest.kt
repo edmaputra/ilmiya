@@ -21,6 +21,7 @@ import org.springframework.http.MediaType
 import org.springframework.test.web.servlet.MockMvc
 import org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get
 import org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post
+import org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put
 import org.springframework.test.web.servlet.result.MockMvcResultMatchers.header
 import org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath
 import org.springframework.test.web.servlet.result.MockMvcResultMatchers.status
@@ -136,5 +137,93 @@ class AcademicYearControllerTest {
         )
             .andExpect(status().isOk)
             .andExpect(jsonPath("$[0].name").value("2026/2027"))
+    }
+
+    @Test
+    fun `should get active academic year when present`() {
+        val year = AcademicYear.create(
+            id = AcademicYearId.of("year-123"),
+            tenantId = tenantId,
+            name = "2026/2027",
+            startDate = LocalDate.of(2026, 7, 1),
+            endDate = LocalDate.of(2027, 6, 30)
+        )
+        every { getAcademicYearsUseCase.getActiveAcademicYear(tenantId) } returns year
+
+        mockMvc.perform(
+            get("/api/v1/academic-years/active")
+                .header("X-Tenant-ID", "tenant-sch-01")
+        )
+            .andExpect(status().isOk)
+            .andExpect(jsonPath("$.name").value("2026/2027"))
+    }
+
+    @Test
+    fun `should return 404 when no active academic year exists`() {
+        every { getAcademicYearsUseCase.getActiveAcademicYear(tenantId) } returns null
+
+        mockMvc.perform(
+            get("/api/v1/academic-years/active")
+                .header("X-Tenant-ID", "tenant-sch-01")
+        )
+            .andExpect(status().isNotFound)
+    }
+
+    @Test
+    fun `should get academic year by id`() {
+        val year = AcademicYear.create(
+            id = AcademicYearId.of("year-123"),
+            tenantId = tenantId,
+            name = "2026/2027",
+            startDate = LocalDate.of(2026, 7, 1),
+            endDate = LocalDate.of(2027, 6, 30)
+        )
+        every { getAcademicYearsUseCase.getById(tenantId, AcademicYearId.of("year-123")) } returns year
+
+        mockMvc.perform(
+            get("/api/v1/academic-years/year-123")
+                .header("X-Tenant-ID", "tenant-sch-01")
+        )
+            .andExpect(status().isOk)
+            .andExpect(jsonPath("$.id").value("year-123"))
+    }
+
+    @Test
+    fun `should activate academic year`() {
+        val year = AcademicYear.create(
+            id = AcademicYearId.of("year-123"),
+            tenantId = tenantId,
+            name = "2026/2027",
+            startDate = LocalDate.of(2026, 7, 1),
+            endDate = LocalDate.of(2027, 6, 30)
+        )
+        every { activateAcademicYearUseCase.activate(tenantId, AcademicYearId.of("year-123")) } returns year
+
+        mockMvc.perform(
+            put("/api/v1/academic-years/year-123/activate")
+                .header("X-Tenant-ID", "tenant-sch-01")
+        )
+            .andExpect(status().isOk)
+            .andExpect(jsonPath("$.id").value("year-123"))
+    }
+
+    @Test
+    fun `should activate academic term`() {
+        val term = AcademicTerm(
+            id = AcademicTermId.of("term-1"),
+            name = "Semester 1",
+            type = AcademicTermType.SEMESTER_1,
+            displayName = "Semester Ganjil",
+            startDate = LocalDate.of(2026, 7, 15),
+            endDate = LocalDate.of(2026, 12, 20)
+        )
+        every { activateAcademicTermUseCase.activateTerm(tenantId, AcademicYearId.of("year-123"), AcademicTermId.of("term-1")) } returns term
+
+        mockMvc.perform(
+            put("/api/v1/academic-years/year-123/terms/term-1/activate")
+                .header("X-Tenant-ID", "tenant-sch-01")
+        )
+            .andExpect(status().isOk)
+            .andExpect(jsonPath("$.id").value("term-1"))
     }
 }

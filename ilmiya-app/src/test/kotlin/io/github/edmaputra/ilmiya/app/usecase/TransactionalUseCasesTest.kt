@@ -1,0 +1,169 @@
+package io.github.edmaputra.ilmiya.app.usecase
+
+import io.github.edmaputra.ilmiya.academic.domain.AcademicTermId
+import io.github.edmaputra.ilmiya.academic.domain.AcademicTermType
+import io.github.edmaputra.ilmiya.academic.domain.AcademicYear
+import io.github.edmaputra.ilmiya.academic.domain.AcademicYearId
+import io.github.edmaputra.ilmiya.academic.domain.AcademicYearStatus
+import io.github.edmaputra.ilmiya.academic.domain.port.`in`.AddAcademicTermCommand
+import io.github.edmaputra.ilmiya.academic.domain.port.`in`.CreateAcademicYearCommand
+import io.github.edmaputra.ilmiya.academic.domain.port.out.AcademicYearEventPublisher
+import io.github.edmaputra.ilmiya.academic.domain.port.out.AcademicYearRepository
+import io.github.edmaputra.ilmiya.app.academic.TransactionalAcademicYearUseCase
+import io.github.edmaputra.ilmiya.app.school.TransactionalConfigureSchoolSettingsUseCase
+import io.github.edmaputra.ilmiya.app.school.TransactionalRegisterSchoolUseCase
+import io.github.edmaputra.ilmiya.app.school.TransactionalSchoolProfileUseCase
+import io.github.edmaputra.ilmiya.common.domain.TenantId
+import io.github.edmaputra.ilmiya.core.school.domain.GradingPreference
+import io.github.edmaputra.ilmiya.core.school.domain.School
+import io.github.edmaputra.ilmiya.core.school.domain.TermLayout
+import io.github.edmaputra.ilmiya.core.school.domain.port.`in`.ConfigureSchoolSettingsCommand
+import io.github.edmaputra.ilmiya.core.school.domain.port.`in`.RegisterSchoolCommand
+import io.github.edmaputra.ilmiya.core.school.domain.port.`in`.UpdateSchoolProfileCommand
+import io.github.edmaputra.ilmiya.core.school.domain.port.out.SchoolEventPublisher
+import io.github.edmaputra.ilmiya.core.school.domain.port.out.SchoolRepository
+import io.mockk.every
+import io.mockk.mockk
+import io.mockk.verify
+import org.assertj.core.api.Assertions.assertThat
+import org.junit.jupiter.api.Test
+import java.time.DayOfWeek
+import java.time.LocalDate
+
+class TransactionalUseCasesTest {
+
+    private val tenantId = TenantId.of("tenant-01")
+
+    // School mocks
+    private val schoolRepository = mockk<SchoolRepository>()
+    private val schoolEventPublisher = mockk<SchoolEventPublisher>(relaxed = true)
+
+    // Academic year mocks
+    private val academicYearRepository = mockk<AcademicYearRepository>()
+    private val academicYearEventPublisher = mockk<AcademicYearEventPublisher>(relaxed = true)
+
+    @Test
+    fun `TransactionalRegisterSchoolUseCase should delegate registration`() {
+        val useCase = TransactionalRegisterSchoolUseCase(schoolRepository, schoolEventPublisher)
+        val command = RegisterSchoolCommand(
+            tenantId = "tenant-01",
+            name = "Test School",
+            institutionCode = "TS01",
+            address = "Jl. Test 1",
+            contactEmail = "admin@ts.sch.id",
+            contactPhone = "021-111111"
+        )
+
+        every { schoolRepository.existsByInstitutionCode("TS01") } returns false
+        every { schoolRepository.existsByTenantId(tenantId) } returns false
+        every { schoolRepository.save(any()) } answers { firstArg() }
+
+        val result = useCase.register(command)
+        assertThat(result.name).isEqualTo("Test School")
+        verify(exactly = 1) { schoolRepository.save(any()) }
+    }
+
+    @Test
+    fun `TransactionalSchoolProfileUseCase should delegate getProfile and updateProfile`() {
+        val useCase = TransactionalSchoolProfileUseCase(schoolRepository, schoolEventPublisher)
+        val existingSchool = School.create(
+            tenantId = tenantId,
+            name = "Old School",
+            institutionCode = "OS01",
+            address = "Jl. Old",
+            contactEmail = "admin@old.sch.id",
+            contactPhone = "021-222222"
+        )
+        existingSchool.pullDomainEvents()
+
+        every { schoolRepository.findByTenantId(tenantId) } returns existingSchool
+        every { schoolRepository.save(any()) } answers { firstArg() }
+
+        val profile = useCase.getProfile(tenantId)
+        assertThat(profile.name).isEqualTo("Old School")
+
+        val updateCommand = UpdateSchoolProfileCommand(
+            name = "New School",
+            address = "Jl. New",
+            contactEmail = "admin@new.sch.id",
+            contactPhone = "021-333333"
+        )
+        val updated = useCase.updateProfile(tenantId, updateCommand)
+        assertThat(updated.name).isEqualTo("New School")
+    }
+
+    @Test
+    fun `TransactionalConfigureSchoolSettingsUseCase should delegate configureSettings`() {
+        val useCase = TransactionalConfigureSchoolSettingsUseCase(schoolRepository, schoolEventPublisher)
+        val existingSchool = School.create(
+            tenantId = tenantId,
+            name = "Test School",
+            institutionCode = "TS01",
+            address = "Jl. Test",
+            contactEmail = "admin@ts.sch.id",
+            contactPhone = "021-111111"
+        )
+        existingSchool.pullDomainEvents()
+
+        val command = ConfigureSchoolSettingsCommand(
+            workingDays = setOf(DayOfWeek.MONDAY, DayOfWeek.TUESDAY),
+            gradingPreference = GradingPreference.LETTER_A_E,
+            termLayout = TermLayout.SEMESTER
+        )
+
+        every { schoolRepository.findByTenantId(tenantId) } returns existingSchool
+        every { schoolRepository.save(any()) } answers { firstArg() }
+
+        val result = useCase.configureSettings(tenantId, command)
+        assertThat(result.operationalSettings.termLayout).isEqualTo(TermLayout.SEMESTER)
+    }
+
+    @Test
+    fun `TransactionalAcademicYearUseCase should delegate all operations`() {
+        val useCase = TransactionalAcademicYearUseCase(academicYearRepository, academicYearEventPublisher)
+
+        val createCmd = CreateAcademicYearCommand(
+            name = "2026/2027",
+            startDate = LocalDate.of(2026, 7, 1),
+            endDate = LocalDate.of(2027, 6, 30)
+        )
+
+        every { academicYearRepository.existsByName(tenantId, "2026/2027") } returns false
+        every { academicYearRepository.save(any()) } answers { firstArg() }
+
+        val created = useCase.create(tenantId, createCmd)
+        assertThat(created.name).isEqualTo("2026/2027")
+
+        every { academicYearRepository.findById(tenantId, created.id) } returns created
+        every { academicYearRepository.findActive(tenantId) } returns created
+        every { academicYearRepository.findAllByTenantId(tenantId) } returns listOf(created)
+
+        val byId = useCase.getById(tenantId, created.id)
+        assertThat(byId.id).isEqualTo(created.id)
+
+        val active = useCase.getActiveAcademicYear(tenantId)
+        assertThat(active?.id).isEqualTo(created.id)
+
+        val list = useCase.listByTenant(tenantId)
+        assertThat(list).hasSize(1)
+
+        val activated = useCase.activate(tenantId, created.id)
+        assertThat(activated.status).isEqualTo(AcademicYearStatus.ACTIVE)
+
+        val addTermCmd = AddAcademicTermCommand(
+            name = "Semester 1",
+            type = AcademicTermType.SEMESTER_1,
+            displayName = "Semester Ganjil",
+            startDate = LocalDate.of(2026, 7, 1),
+            endDate = LocalDate.of(2026, 12, 31)
+        )
+        val term = useCase.addTerm(tenantId, created.id, addTermCmd)
+        assertThat(term.name).isEqualTo("Semester 1")
+
+        val yearWithTerm = created.addTerm(term)
+        every { academicYearRepository.findById(tenantId, created.id) } returns yearWithTerm
+
+        val activatedTerm = useCase.activateTerm(tenantId, created.id, term.id)
+        assertThat(activatedTerm.id).isEqualTo(term.id)
+    }
+}
