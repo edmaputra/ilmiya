@@ -23,7 +23,7 @@ and this project adheres to [Semantic Versioning (v2.0.0)](https://semver.org/sp
 ### Changed
 - Updated `ed-agent-standards` submodule to latest commit with multi-stack structure (`rules/java-kotlin/`, `rules/shared/`) and automated structure scanner.
 - Updated `README.md` documentation links reflecting the stack-based rule structure.
-- Upgraded `ed-iam` starter library to `0.2.0`, integrating enhanced `OperationContext` and `ActorType` (`USER`, `SYSTEM`, `MACHINE`) extensions for actor scoping and auditing.
+- Upgraded `ed-iam` starter library to `0.3.0`, integrating its decoupled modular structure (`ed-iam-auth` extraction for authentication and token issuance, `SecurityContextCurrentActor` relocation to `ed-iam-resource-server`, centralized `TenantResolutionHelper` in `ed-iam-core`, and user pagination/filtering support).
 - Migrated codebase to idiomatic Kotlin targeting Java 25 and Spring Boot 4.1.1.
 - REST endpoints now return direct domain DTOs without wrapper envelopes, aligning with API conventions.
 - Global exception handling refactored to emit RFC 9457 `ProblemDetail` payloads.
