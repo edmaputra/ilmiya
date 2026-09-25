@@ -18,4 +18,6 @@ interface SpringDataSchoolRepository : JpaRepository<SchoolJpaEntity, String> {
     fun existsByInstitutionCode(institutionCode: String): Boolean
 
     fun existsByTenantId(tenantId: String): Boolean
+
+    fun deleteByTenantId(tenantId: String)
 }

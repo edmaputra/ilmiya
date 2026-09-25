@@ -190,6 +190,10 @@ class LocalDataSeeder(
             IlmiyaPermissions.INVOICE_CREATE,
             IlmiyaPermissions.PAYMENT_RECORD,
             IlmiyaPermissions.FINANCIAL_REPORT_READ,
+            IlmiyaPermissions.TENANT_READ,
+            IlmiyaPermissions.TENANT_CREATE,
+            IlmiyaPermissions.TENANT_UPDATE,
+            IlmiyaPermissions.TENANT_DELETE,
             "school:*",
             "academic:*",
             "student:*",
@@ -197,7 +201,8 @@ class LocalDataSeeder(
             "hr:*",
             "timetable:*",
             "exam:*",
-            "finance:*"
+            "finance:*",
+            "tenant:*"
         )
 
         // 1. Seed School Admin Role and User

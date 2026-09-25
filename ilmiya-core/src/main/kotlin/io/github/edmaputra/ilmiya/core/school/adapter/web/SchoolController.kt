@@ -2,8 +2,10 @@ package io.github.edmaputra.ilmiya.core.school.adapter.web
 
 import io.github.edmaputra.iam.domain.security.annotation.RequirePermission
 import io.github.edmaputra.ilmiya.common.context.TenantContext
+import io.github.edmaputra.ilmiya.common.dto.PageResponse
 import io.github.edmaputra.ilmiya.core.school.domain.port.`in`.ConfigureSchoolSettingsUseCase
 import io.github.edmaputra.ilmiya.core.school.domain.port.`in`.GetSchoolProfileUseCase
+import io.github.edmaputra.ilmiya.core.school.domain.port.`in`.ListTenantsUseCase
 import io.github.edmaputra.ilmiya.core.school.domain.port.`in`.RegisterSchoolUseCase
 import io.github.edmaputra.ilmiya.core.school.domain.port.`in`.UpdateSchoolProfileUseCase
 import io.github.edmaputra.ilmiya.core.security.IlmiyaPermissions
@@ -14,6 +16,7 @@ import org.springframework.web.bind.annotation.PostMapping
 import org.springframework.web.bind.annotation.PutMapping
 import org.springframework.web.bind.annotation.RequestBody
 import org.springframework.web.bind.annotation.RequestMapping
+import org.springframework.web.bind.annotation.RequestParam
 import org.springframework.web.bind.annotation.RestController
 import java.net.URI
 
@@ -29,8 +32,30 @@ class SchoolController(
     private val registerSchoolUseCase: RegisterSchoolUseCase,
     private val getSchoolProfileUseCase: GetSchoolProfileUseCase,
     private val updateSchoolProfileUseCase: UpdateSchoolProfileUseCase,
-    private val configureSchoolSettingsUseCase: ConfigureSchoolSettingsUseCase
+    private val configureSchoolSettingsUseCase: ConfigureSchoolSettingsUseCase,
+    private val listTenantsUseCase: ListTenantsUseCase
 ) {
+
+    /**
+     * Lists registered schools and tenant boundaries with pagination.
+     */
+    @GetMapping
+    fun listSchools(
+        @RequestParam(defaultValue = "0") page: Int,
+        @RequestParam(defaultValue = "20") size: Int
+    ): ResponseEntity<PageResponse<SchoolResponse>> {
+        val result = listTenantsUseCase.listTenants(page, size)
+        val response = PageResponse(
+            content = result.content.map { SchoolResponse.from(it) },
+            page = result.page,
+            size = result.size,
+            totalElements = result.totalElements,
+            totalPages = result.totalPages,
+            first = result.first,
+            last = result.last
+        )
+        return ResponseEntity.ok(response)
+    }
 
     /**
      * Registers and provisions a new school and tenant boundary.

@@ -19,6 +19,12 @@ object IlmiyaPermissions {
     const val SCHOOL_PROFILE_WRITE = "school:profile:write"
     const val SCHOOL_SETTINGS_MANAGE = "school:settings:manage"
 
+    // Tenant Management Context
+    const val TENANT_READ = "tenant:management:read"
+    const val TENANT_CREATE = "tenant:management:create"
+    const val TENANT_UPDATE = "tenant:management:update"
+    const val TENANT_DELETE = "tenant:management:delete"
+
     // Academic Context
     const val ACADEMIC_YEAR_READ = "academic:year:read"
     const val ACADEMIC_YEAR_WRITE = "academic:year:write"

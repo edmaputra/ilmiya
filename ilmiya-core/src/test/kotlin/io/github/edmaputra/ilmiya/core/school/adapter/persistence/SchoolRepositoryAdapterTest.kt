@@ -237,4 +237,48 @@ class SchoolRepositoryAdapterTest {
             DayOfWeek.MONDAY, DayOfWeek.TUESDAY, DayOfWeek.WEDNESDAY, DayOfWeek.THURSDAY, DayOfWeek.FRIDAY
         )
     }
+
+    @Test
+    fun `findAll should return mapped domain schools from spring data repository page`() {
+        val pageableSlot = slot<org.springframework.data.domain.Pageable>()
+        val page = org.springframework.data.domain.PageImpl(listOf(sampleJpaEntity))
+        every { springDataRepository.findAll(capture(pageableSlot)) } returns page
+
+        val results = adapter.findAll(page = 0, size = 10)
+
+        assertThat(results).hasSize(1)
+        assertThat(results[0].name).isEqualTo("Global School")
+        assertThat(pageableSlot.captured.pageNumber).isEqualTo(0)
+        assertThat(pageableSlot.captured.pageSize).isEqualTo(10)
+        verify(exactly = 1) { springDataRepository.findAll(any<org.springframework.data.domain.Pageable>()) }
+    }
+
+    @Test
+    fun `count should delegate to spring data repository`() {
+        every { springDataRepository.count() } returns 42L
+
+        val result = adapter.count()
+
+        assertThat(result).isEqualTo(42L)
+        verify(exactly = 1) { springDataRepository.count() }
+    }
+
+    @Test
+    fun `deleteByTenantId should find entity and delete when present`() {
+        every { springDataRepository.findByTenantId(tenantId.value) } returns Optional.of(sampleJpaEntity)
+        every { springDataRepository.delete(sampleJpaEntity) } returns Unit
+
+        adapter.deleteByTenantId(tenantId)
+
+        verify(exactly = 1) { springDataRepository.delete(sampleJpaEntity) }
+    }
+
+    @Test
+    fun `deleteByTenantId should not delete when entity is not found`() {
+        every { springDataRepository.findByTenantId(tenantId.value) } returns Optional.empty()
+
+        adapter.deleteByTenantId(tenantId)
+
+        verify(exactly = 0) { springDataRepository.delete(any()) }
+    }
 }
