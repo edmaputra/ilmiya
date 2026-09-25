@@ -176,3 +176,10 @@ Returns a new JWT access token scoped specifically to `pesantren-darussalam` wit
 ### 400 Bad Request (`Missing tenant context`)
 - **Reason**: The endpoint requires a tenant boundary, but no `X-Tenant-ID` header was provided.
 - **Remedy**: Add `X-Tenant-ID: <tenant-id>` to the request headers.
+
+---
+
+## Related Documentation
+
+- [Roles and Permissions Specification](../02-roles-and-permissions.md)
+- [Features and Roadmap](../01-features-and-roadmap.md)
