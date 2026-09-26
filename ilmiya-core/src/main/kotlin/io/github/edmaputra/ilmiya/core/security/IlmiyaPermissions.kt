@@ -36,8 +36,8 @@ object IlmiyaPermissions {
     // =========================================================================
     // School Profile (Category D)
     const val SCHOOL_PROFILE_READ = "school:profile:read"
-    const val SCHOOL_PROFILE_WRITE = "school:profile:write"
     const val SCHOOL_PROFILE_UPDATE = "school:profile:update"
+    const val SCHOOL_PROFILE_WRITE = SCHOOL_PROFILE_UPDATE // Legacy alias for backward compatibility
 
     // School Operational Settings (Category D - Singleton)
     const val SCHOOL_SETTINGS_READ = "school:settings:read"
