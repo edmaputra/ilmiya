@@ -15,6 +15,7 @@ package io.github.edmaputra.ilmiya.core.security
 object IlmiyaPermissions {
 
     // School Context
+    const val SCHOOL_REGISTER = "school:registration:create"
     const val SCHOOL_PROFILE_READ = "school:profile:read"
     const val SCHOOL_PROFILE_WRITE = "school:profile:write"
     const val SCHOOL_SETTINGS_MANAGE = "school:settings:manage"

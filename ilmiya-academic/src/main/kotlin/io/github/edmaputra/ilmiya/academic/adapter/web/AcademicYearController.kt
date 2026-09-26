@@ -1,5 +1,6 @@
 package io.github.edmaputra.ilmiya.academic.adapter.web
 
+import io.github.edmaputra.iam.domain.security.annotation.RequirePermission
 import io.github.edmaputra.ilmiya.academic.domain.AcademicTermId
 import io.github.edmaputra.ilmiya.academic.domain.AcademicYearId
 import io.github.edmaputra.ilmiya.academic.domain.port.`in`.ActivateAcademicTermUseCase
@@ -8,6 +9,7 @@ import io.github.edmaputra.ilmiya.academic.domain.port.`in`.AddAcademicTermUseCa
 import io.github.edmaputra.ilmiya.academic.domain.port.`in`.CreateAcademicYearUseCase
 import io.github.edmaputra.ilmiya.academic.domain.port.`in`.GetAcademicYearsUseCase
 import io.github.edmaputra.ilmiya.common.context.TenantContext
+import io.github.edmaputra.ilmiya.core.security.IlmiyaPermissions
 import jakarta.validation.Valid
 import org.springframework.http.ResponseEntity
 import org.springframework.web.bind.annotation.GetMapping
@@ -39,6 +41,7 @@ class AcademicYearController(
      * Creates a new academic year under current tenant context.
      */
     @PostMapping
+    @RequirePermission(IlmiyaPermissions.ACADEMIC_YEAR_WRITE)
     fun createAcademicYear(
         @Valid @RequestBody request: CreateAcademicYearRequest
     ): ResponseEntity<AcademicYearResponse> {
@@ -53,6 +56,7 @@ class AcademicYearController(
      * Lists all academic years for the current tenant.
      */
     @GetMapping
+    @RequirePermission(IlmiyaPermissions.ACADEMIC_YEAR_READ)
     fun listAcademicYears(): ResponseEntity<List<AcademicYearResponse>> {
         val tenantId = TenantContext.requireTenantId()
         val years = getAcademicYearsUseCase.listByTenant(tenantId).map { AcademicYearResponse.from(it) }
@@ -63,6 +67,7 @@ class AcademicYearController(
      * Retrieves the currently active academic year for the tenant.
      */
     @GetMapping("/active")
+    @RequirePermission(IlmiyaPermissions.ACADEMIC_YEAR_READ)
     fun getActiveAcademicYear(): ResponseEntity<AcademicYearResponse> {
         val tenantId = TenantContext.requireTenantId()
         val activeYear = getAcademicYearsUseCase.getActiveAcademicYear(tenantId)
@@ -74,6 +79,7 @@ class AcademicYearController(
      * Retrieves a single academic year by its ID.
      */
     @GetMapping("/{id}")
+    @RequirePermission(IlmiyaPermissions.ACADEMIC_YEAR_READ)
     fun getById(@PathVariable id: String): ResponseEntity<AcademicYearResponse> {
         val tenantId = TenantContext.requireTenantId()
         val year = getAcademicYearsUseCase.getById(tenantId, AcademicYearId.of(id))
@@ -84,6 +90,7 @@ class AcademicYearController(
      * Activates an academic year, archiving any other active year.
      */
     @PutMapping("/{id}/activate")
+    @RequirePermission(IlmiyaPermissions.ACADEMIC_YEAR_WRITE)
     fun activate(@PathVariable id: String): ResponseEntity<AcademicYearResponse> {
         val tenantId = TenantContext.requireTenantId()
         val activated = activateAcademicYearUseCase.activate(tenantId, AcademicYearId.of(id))
@@ -94,6 +101,7 @@ class AcademicYearController(
      * Adds an academic term/semester to an academic year.
      */
     @PostMapping("/{id}/terms")
+    @RequirePermission(IlmiyaPermissions.ACADEMIC_YEAR_WRITE)
     fun addTerm(
         @PathVariable id: String,
         @Valid @RequestBody request: AddAcademicTermRequest
@@ -109,6 +117,7 @@ class AcademicYearController(
      * Activates an academic term within an academic year.
      */
     @PutMapping("/{id}/terms/{termId}/activate")
+    @RequirePermission(IlmiyaPermissions.ACADEMIC_YEAR_WRITE)
     fun activateTerm(
         @PathVariable id: String,
         @PathVariable termId: String

@@ -10,7 +10,7 @@ In Ilmiya, multi-tenancy is logical and enforced at the application and database
 - **Tenant Discriminator**: Every tenant has a unique identifier (e.g. `al-azhar-jakarta`, `smk-taruna-01`).
 - **Data Partitioning**: All tenant-specific tables (such as `core_schools`, `academic_years`, `academic_terms`, and future student/finance records) contain a `tenant_id` column.
 - **Context Propagation**: The multi-tenant boundary is bound per request using Java 25 `ScopedValue` via `TenantContext` (`TenantContextFilter`), preventing thread-local state leakage across requests.
-- **Registration Endpoint**: `POST /api/v1/schools` is publicly accessible to permit school self-registration and automated onboarding pipelines.
+- **Registration Endpoint**: `POST /api/v1/schools` requires `school:registration:create` permission to provision school institutions and tenant boundaries.
 
 ---
 
@@ -30,12 +30,13 @@ NPSN:             8-digit numeric string (e.g. 20101234)
 
 ---
 
-## Step 2: Register the School via Public API
+## Step 2: Register the School via Secured API
 
-Send a `POST` request to `/api/v1/schools`. This endpoint is configured with `permitAll()` in Spring Security to allow initial school onboarding:
+Send a `POST` request to `/api/v1/schools` with authorization token carrying `school:registration:create`:
 
 ```bash
 curl -i -X POST http://localhost:8080/api/v1/schools \
+  -H "Authorization: Bearer <JWT_ACCESS_TOKEN>" \
   -H "Content-Type: application/json" \
   -d '{
     "tenantId": "sma-nusantara-1",
@@ -99,7 +100,7 @@ Authorized administrators can perform full lifecycle CRUD management on tenants 
 | **Update** | `PUT /api/v1/tenants/{tenantId}` | `tenant:management:update` | Update tenant details and lifecycle status |
 | **Delete** | `DELETE /api/v1/tenants/{tenantId}` | `tenant:management:delete` | Delete a tenant boundary |
 
-*(Note: For unauthenticated client portals and self-registration screens, `GET /api/v1/schools` is publicly accessible without credentials).*
+*(Note: For institutional directories, `GET /api/v1/schools` is secured with `school:profile:read` permission).*
 
 ### Example: Retrieve Single Tenant
 ```bash
