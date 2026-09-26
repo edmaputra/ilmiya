@@ -7,9 +7,10 @@
 This document establishes the official business and security specification for **Role-Based Access Control (RBAC)** in Ilmiya. It defines:
 1. **Tenancy, School, and Contextual Scopes** (distinguishing Tenant vs. School boundaries)
 2. **Standard User Roles** across foundation, institutional, operational, and self-service tiers
-3. **Fine-Grained Permissions Catalog** structured in `{domain}:{resource}:{action}` notation
-4. **Role-to-Permission Matrix** detailing operational capabilities and contextual boundaries
-5. **Technical Implementation Patterns** for multi-tenant and school-scoped enforcement
+3. **The Hybrid Authorization Architecture** (principled taxonomy combining fine-grained CRUD, segregation of duties, workflows, and pragmatic management)
+4. **Fine-Grained Permissions Catalog** structured in `{domain}:{resource}:{action}` notation
+5. **Role-to-Permission Matrix** detailing operational capabilities and contextual boundaries
+6. **Technical Implementation Patterns** for multi-tenant and school-scoped enforcement
 
 ---
 
@@ -164,7 +165,7 @@ Roles in Ilmiya represent logical collections of permissions suited to instituti
 - **Persona**: Head of school, madrasah headmaster, or mudir pesantren.
 - **Responsibilities**:
   - Institutional governance, staff leadership, and academic policy compliance.
-  - Final approval and digital locking of semester grades and e-Rapor report cards.
+  - Final approval and digital locking of semester grades and e-Rapor report cards (`exam:grade:lock`, `exam:report-card:publish`).
   - Final approval of staff leave requests and major disciplinary actions.
   - Sign off on official compliance reports (Dapodik / EMIS).
 
@@ -214,7 +215,7 @@ Roles in Ilmiya represent logical collections of permissions suited to instituti
 - **Persona**: Classroom supervisor and primary student mentor.
 - **Responsibilities**:
   - Conduct daily morning roll call and track student absence reasons (sakit, izin, alpa).
-  - Verify parent doctor's notes and excuse letters.
+  - Verify parent doctor's notes and excuse letters (`attendance:student:excuse`).
   - Monitor aggregate academic progress, attendance percentages, and behavior of homeroom students.
   - Synthesize subject grades, extracurricular participation, and write character notes for semester e-Rapor.
   - Generate and review draft student report cards before principal lock.
@@ -274,178 +275,249 @@ Roles in Ilmiya represent logical collections of permissions suited to instituti
 
 ---
 
-## 3. Fine-Grained Permissions Catalog
+## 3. The Hybrid Authorization Model
 
-All permissions adhere strictly to `{domain}:{resource}:{action}` syntax, supporting `ed-iam` wildcard matching (`domain:*` or `domain:resource:*`).
+Ilmiya rejects both pure coarse-grained bundling (which creates security and audit vulnerabilities) and universal micro-CRUD (which creates token bloat and unmanageable complexity). Instead, permissions are governed by a **4-Tier Hybrid Taxonomy**:
 
-### 3.1 Tenant & Foundation Administration (`tenant:*`)
+```mermaid
+flowchart TD
+    Operation["Any Domain Operation in Ilmiya"]
+    
+    Operation --> Q1{"Is it a persistent Master Entity\nwhere deletion causes severe data loss?"}
+    Q1 -- Yes --> CatA["Category A: Fine-Grained CRUD\n(:read, :create, :update, :delete)"]
+    
+    Q1 -- No --> Q2{"Does it involve Financial transactions,\nApprovals, or Final Locks?"}
+    Q2 -- Yes --> CatB["Category B: Dual-Control Verbs\n(:approve, :lock, :publish, :void)"]
+    
+    Q2 -- No --> Q3{"Is it a Multi-Step Workflow\nor Procedural State Machine?"}
+    Q3 -- Yes --> CatC["Category C: Workflow Action Verbs\n(:apply, :review, :execute, :rollback)"]
+    
+    Q3 -- No --> CatD["Category D: Singletons & Orchestration\n(:read, :manage)"]
+```
 
-| Permission String | Description |
-|---|---|
-| `tenant:profile:read` | View foundation/tenant profile, corporate data, and registered schools. |
-| `tenant:profile:write` | Update foundation/tenant profile and corporate parameters. |
-| `tenant:school:manage` | Register, activate, deactivate, or archive school units under the tenant. |
-| `tenant:subscription:read` | View platform subscription tier, renewal dates, and license limits. |
-| `tenant:audit:read` | Inspect cross-school immutable audit logs across the tenant. |
+### Taxonomy Classification Rules
 
-### 3.2 School Profile & Settings (`school:*`)
-
-| Permission String | Description |
-|---|---|
-| `school:profile:read` | View school unit profile details (NPSN, address, contact, branding). |
-| `school:profile:write` | Modify school profile, accreditation details, and branding assets. |
-| `school:settings:manage` | Configure operational parameters (working days, grading preference, term layout). |
-| `school:user:manage` | Create, invite, deactivate user accounts, and assign school-level roles. |
-| `school:audit:read` | Inspect school-level immutable audit logs. |
-
-### 3.3 Academic Structure & Curriculum (`academic:*`)
-
-| Permission String | Description |
-|---|---|
-| `academic:year:read` | View academic years and operational status. |
-| `academic:year:write` | Create and activate/archive academic years for the school. |
-| `academic:term:read` | View academic terms and semester boundaries. |
-| `academic:term:write` | Add, activate, and close academic terms/semesters. |
-| `academic:curriculum:read` | Browse curriculum frameworks, learning objectives, and syllabi. |
-| `academic:curriculum:manage` | Configure curriculum structures and grading standards. |
-| `academic:course:read` | View master subject catalog. |
-| `academic:course:write` | Create and modify subjects (code, name, category, credit hours). |
-| `academic:class:read` | View grade levels, batch sections, and class enrollments. |
-| `academic:class:write` | Create and configure class sections (e.g. 7-A, 10-IPA-1) and capacity. |
-| `academic:promotion:manage` | Execute student batch promotion, retention, and graduation workflows. |
-
-### 3.4 Student Lifecycle & Admissions (`student:*`)
-
-| Permission String | Description |
-|---|---|
-| `student:profile:read` | View student demographic and academic profile data. |
-| `student:profile:write` | Create, edit, and update student master profiles. |
-| `student:admission:manage` | Process new student admissions (PPDB applications, entrance testing, status). |
-| `student:enrollment:manage` | Assign and transfer students to classes and tracks. |
-| `student:guardian:manage` | Link parent/guardian accounts to student profiles and set primary contacts. |
-| `student:document:read` | Download student civil documentation (KK, akta kelahiran, ijazah). |
-| `student:document:write` | Upload and verify student identity and compliance documents. |
-| `student:conduct:read` | View student disciplinary records, merit/demerit points, and awards. |
-| `student:conduct:manage` | Record behavioral infractions, counseling notes, and merit points. |
-
-### 3.5 Attendance Tracking (`attendance:*`)
-
-| Permission String | Description |
-|---|---|
-| `attendance:student:read` | View student daily and period attendance records. |
-| `attendance:student:record` | Submit attendance roll call (present, sick, permitted, absent). |
-| `attendance:student:update` | Amend or correct recorded student attendance logs. |
-| `attendance:student:excuse` | Submit and approve absence justification letters and medical certificates. |
-| `attendance:staff:read` | View staff daily check-in and attendance summaries. |
-| `attendance:staff:record` | Record staff daily attendance check-in/check-out. |
-| `attendance:staff:approve` | Review and approve staff attendance corrections or remote check-ins. |
-
-### 3.6 Timetable & Institutional Calendar (`timetable:*`)
-
-| Permission String | Description |
-|---|---|
-| `timetable:schedule:read` | View class schedules, period timing sets, and teacher allocations. |
-| `timetable:schedule:manage` | Generate, edit, and publish class time slots, subject slots, and room allocations. |
-| `timetable:calendar:read` | View school calendar events, exam weeks, and holidays. |
-| `timetable:calendar:manage` | Create, update, and publish institutional events, holidays, and schedule adjustments. |
-
-### 3.7 Examination, Assessment & e-Rapor (`exam:*`)
-
-| Permission String | Description |
-|---|---|
-| `exam:schedule:read` | View examination timetables and assessment periods. |
-| `exam:schedule:manage` | Set up exam sessions (PTS, PAS, Asesmen Sumatif Akhir Jenjang). |
-| `exam:grade:read` | View recorded marks and component scores. |
-| `exam:grade:create` | Record formative, summative, and homework scores for assigned classes. |
-| `exam:grade:update` | Update or adjust recorded marks before grade submission deadline. |
-| `exam:grade:lock` | Lock grade entry for an exam period to prevent further modifications. |
-| `exam:report-card:read` | View compiled e-Rapor student progress reports. |
-| `exam:report-card:generate` | Aggregate scores, attendance, extracurriculars, and generate draft report cards. |
-| `exam:report-card:publish` | Publish certified digital e-Rapor cards to student and parent portals. |
-
-### 3.8 Finance, Fee Management & Cashbook (`finance:*`)
-
-| Permission String | Description |
-|---|---|
-| `finance:fee:read` | View fee catalog, fee schedules, and pricing rules. |
-| `finance:fee:manage` | Define fee categories (SPP, gedung), amounts, and scholarship discounts. |
-| `finance:invoice:read` | View student billing statements and invoices. |
-| `finance:invoice:create` | Generate recurring monthly fee invoices and ad-hoc bills. |
-| `finance:payment:read` | View payment history, payment receipts, and collection logs. |
-| `finance:payment:create` | Record fee collection transactions and issue signed receipts. |
-| `finance:payment:void` | Void erroneously posted payment records (restricted privilege). |
-| `finance:report:read` | View fee collection summaries, cashbook ledgers, and overdue arrears aging. |
-
-### 3.9 Human Resources & School Payroll (`hr:*`)
-
-| Permission String | Description |
-|---|---|
-| `hr:staff:read` | View staff master profiles, departments, and designations. |
-| `hr:staff:write` | Add and update employee records, contracts, NUPTK, and certifications. |
-| `hr:assignment:read` | View teacher subject allocations and homeroom appointments. |
-| `hr:assignment:manage` | Assign teaching allocations, subject responsibilities, and homeroom roles. |
-| `hr:leave:request` | Submit employee leave applications. |
-| `hr:leave:approve` | Review, approve, or reject staff leave requests. |
-| `hr:payroll:read` | View salary components and personal/school payslips. |
-| `hr:payroll:calculate` | Execute monthly payroll calculations based on attendance and teaching hours. |
-| `hr:payroll:disburse` | Finalize payroll disbursement batches and release payslips. |
-
-### 3.10 Audit Trail (`audit:*`)
-
-| Permission String | Description |
-|---|---|
-| `audit:log:read` | Inspect immutable audit logs of domain mutations. |
+1. **Category A: Core Master Entities (Fine-Grained CRUD)**:
+   - *Pattern*: `{domain}:{resource}:read`, `{domain}:{resource}:create`, `{domain}:{resource}:update`, `{domain}:{resource}:delete`.
+   - *Rationale*: Crucial permanent entities (students, courses, classes, fee structures, staff) must separate creation and editing from **destruction**. A junior registrar can register and update students without possessing the authority to delete records.
+2. **Category B: High-Risk Segregation of Duties (Dual-Control Verbs)**:
+   - *Pattern*: Dedicated domain verbs enforcing the Four-Eyes Principle / Maker-Checker pattern.
+   - *Rationale*: High-risk financial operations and compliance sign-offs require strict segregation. For example, a cashier can record payments (`finance:payment:create`), but only a senior bursar or principal can void a posted receipt (`finance:payment:void`). Teachers enter marks (`exam:grade:create`), but only the principal locks the grades (`exam:grade:lock`).
+3. **Category C: Multi-Step Business Workflows (Lifecycle Verbs)**:
+   - *Pattern*: Verbs aligned with procedural domain steps (`:apply`, `:review`, `:execute`, `:rollback`, `:calculate`, `:disburse`).
+   - *Rationale*: Admissions (PPDB), year-end promotions, and monthly payroll are not simple CRUD rows; they are business workflows transitioning through distinct states.
+4. **Category D: Singletons, Settings & Orchestrations (Pragmatic `:manage`)**:
+   - *Pattern*: `{domain}:{resource}:read`, `{domain}:{resource}:manage` (or `:update`).
+   - *Rationale*: Single-instance records (school operational settings) and relational coordination mappings (parent-student linkage, teacher timetable allocation) do not benefit from micro-CRUD. Using `:manage` prevents permission bloat without compromising safety.
 
 ---
 
-## 4. Role-to-Permission Matrix
+## 4. Fine-Grained Permissions Catalog
 
-The following matrix defines the operational capabilities assigned to each standard role across **Tenant** and **School** scopes.
+All permissions adhere strictly to `{domain}:{resource}:{action}` syntax, supporting `ed-iam` wildcard matching (`domain:*` or `domain:resource:*`).
+
+### 4.1 Tenant & Foundation Administration (`tenant:*`)
+
+| Permission String | Category | Description |
+|---|:---:|---|
+| `tenant:management:read` | Cat A (CRUD) | View registered tenants and organization details. |
+| `tenant:management:create` | Cat A (CRUD) | Provision new tenant organizations on the platform. |
+| `tenant:management:update` | Cat A (CRUD) | Update tenant subscription and organization profile. |
+| `tenant:management:delete` | Cat A (CRUD) | Deactivate or archive a tenant organization. |
+| `tenant:profile:read` | Cat D (Settings) | View foundation/tenant profile and corporate data. |
+| `tenant:profile:update` | Cat D (Settings) | Update foundation corporate details and tax ID. |
+| `tenant:school:manage` | Cat D (Orchestration)| Register, activate, or decommission school units under the foundation. |
+| `tenant:subscription:read` | Cat D (Settings) | View platform licensing tiers and renewal dates. |
+| `tenant:audit:read` | Audit | Inspect cross-school immutable audit logs across the tenant. |
+
+### 4.2 School Profile, Settings & Users (`school:*`)
+
+| Permission String | Category | Description |
+|---|:---:|---|
+| `school:profile:read` | Cat D (Settings) | View school unit profile details (NPSN, address, contact, branding). |
+| `school:profile:update` | Cat D (Settings) | Modify school profile, accreditation details, and branding assets. |
+| `school:settings:read` | Cat D (Settings) | View operational parameters (working days, grading format, term layout). |
+| `school:settings:manage` | Cat D (Settings) | Configure institutional operational parameters. |
+| `school:user:read` | Cat A (CRUD) | View school staff user accounts. |
+| `school:user:create` | Cat A (CRUD) | Provision new user accounts and send invites. |
+| `school:user:update` | Cat A (CRUD) | Update user profiles, active status, or assign school roles. |
+| `school:user:delete` | Cat A (CRUD) | Hard-delete or revoke user accounts. |
+| `school:audit:read` | Audit | Inspect school-level immutable audit logs. |
+
+### 4.3 Academic Structure & Curriculum (`academic:*`)
+
+| Permission String | Category | Description |
+|---|:---:|---|
+| `academic:year:read` | Cat A (CRUD) | View academic years and operational status. |
+| `academic:year:create` | Cat A (CRUD) | Provision a new academic year. |
+| `academic:year:update` | Cat A (CRUD) | Update dates or activate/archive an academic year. |
+| `academic:year:delete` | Cat A (CRUD) | Remove an empty/unactivated academic year. |
+| `academic:term:read` | Cat A (CRUD) | View academic terms and semester boundaries. |
+| `academic:term:create` | Cat A (CRUD) | Add a new term/semester to an academic year. |
+| `academic:term:update` | Cat A (CRUD) | Update term dates or activate/close terms. |
+| `academic:term:delete` | Cat A (CRUD) | Delete an empty academic term. |
+| `academic:curriculum:read` | Cat D (Settings) | Browse curriculum frameworks, learning objectives, and syllabi. |
+| `academic:curriculum:manage` | Cat D (Settings) | Configure curriculum structures and grading standards. |
+| `academic:course:read` | Cat A (CRUD) | View master subject catalog. |
+| `academic:course:create` | Cat A (CRUD) | Create new subjects in the catalog. |
+| `academic:course:update` | Cat A (CRUD) | Modify subject details, category, or credit hours. |
+| `academic:course:delete` | Cat A (CRUD) | Delete an unused subject from the catalog. |
+| `academic:class:read` | Cat A (CRUD) | View grade levels, batch sections, and class enrollments. |
+| `academic:class:create` | Cat A (CRUD) | Create new class batch sections (e.g. 7-A, 10-IPA-1). |
+| `academic:class:update` | Cat A (CRUD) | Edit class section details, room, and capacity. |
+| `academic:class:delete` | Cat A (CRUD) | Delete an empty class batch section. |
+| `academic:promotion:read` | Cat C (Workflow) | View class promotion criteria and candidate lists. |
+| `academic:promotion:execute` | Cat C (Workflow) | Execute year-end student promotion, retention, or graduation batch. |
+| `academic:promotion:rollback`| Cat C (Workflow) | Revert an executed promotion batch in case of error. |
+
+### 4.4 Student Lifecycle & Admissions (`student:*`)
+
+| Permission String | Category | Description |
+|---|:---:|---|
+| `student:profile:read` | Cat A (CRUD) | View student demographic and academic profile data. |
+| `student:profile:create` | Cat A (CRUD) | Register and enroll new students. |
+| `student:profile:update` | Cat A (CRUD) | Update student master records and contact details. |
+| `student:profile:delete` | Cat A (CRUD) | Purge student records (restricted high-privilege action). |
+| `student:admission:read` | Cat C (Workflow) | Browse admissions / PPDB applicant lists and statuses. |
+| `student:admission:apply` | Cat C (Workflow) | Register prospective applicant into the PPDB portal. |
+| `student:admission:review` | Cat C (Workflow) | Input entrance test results, interview notes, and review files. |
+| `student:admission:approve`| Cat C (Workflow) | Officially admit applicant and trigger student profile creation. |
+| `student:enrollment:manage`| Cat D (Orchestration)| Assign, transfer, or reallocate students to class batches. |
+| `student:guardian:manage` | Cat D (Orchestration)| Link parent/guardian accounts to student profiles. |
+| `student:document:read` | Cat A (CRUD) | Download student civil documentation (KK, akta kelahiran, ijazah). |
+| `student:document:upload` | Cat A (CRUD) | Upload verified student identity documents. |
+| `student:document:delete` | Cat A (CRUD) | Delete erroneous document attachments. |
+| `student:conduct:read` | Cat A/B | View student disciplinary records, infractions, and merits. |
+| `student:conduct:record` | Cat A/B | Record behavioral infractions and demerit/merit points. |
+| `student:conduct:update` | Cat A/B | Update disciplinary notes and follow-up interventions. |
+| `student:conduct:delete` | Cat A/B | Expunge or remove a disciplinary record (restricted). |
+
+### 4.5 Attendance Tracking (`attendance:*`)
+
+| Permission String | Category | Description |
+|---|:---:|---|
+| `attendance:student:read` | Cat A (Read) | View student daily and period attendance records. |
+| `attendance:student:record` | Cat A/B | Submit daily or period roll call (present, sick, permitted, absent). |
+| `attendance:student:update` | Cat A/B | Amend or correct recorded student attendance logs. |
+| `attendance:student:excuse` | Cat B (Dual-Control)| Submit and approve absence justification letters and medical certificates. |
+| `attendance:staff:read` | Cat A (Read) | View staff daily check-in and attendance summaries. |
+| `attendance:staff:record` | Cat A | Record staff daily attendance check-in/check-out. |
+| `attendance:staff:approve` | Cat B (Dual-Control)| Review and approve staff attendance corrections or remote check-ins. |
+
+### 4.6 Timetable & Institutional Calendar (`timetable:*`)
+
+| Permission String | Category | Description |
+|---|:---:|---|
+| `timetable:schedule:read` | Cat A (Read) | View class schedules, period timing sets, and teacher allocations. |
+| `timetable:schedule:create` | Cat A (CRUD) | Create draft class schedule slots and room allocations. |
+| `timetable:schedule:update` | Cat A (CRUD) | Reallocate teachers, rooms, or period times. |
+| `timetable:schedule:delete` | Cat A (CRUD) | Remove class timetable schedule entries. |
+| `timetable:schedule:publish`| Cat B (Dual-Control)| Officially publish verified timetable to teachers, students, and parents. |
+| `timetable:calendar:read` | Cat D (Settings) | View school calendar events, exam weeks, and holidays. |
+| `timetable:calendar:manage` | Cat D (Settings) | Create, update, or cancel institutional calendar events and holidays. |
+
+### 4.7 Examination, Assessment & e-Rapor (`exam:*`)
+
+| Permission String | Category | Description |
+|---|:---:|---|
+| `exam:schedule:read` | Cat A (CRUD) | View examination timetables and assessment periods. |
+| `exam:schedule:create` | Cat A (CRUD) | Configure exam sessions (PTS, PAS, Asesmen Sumatif). |
+| `exam:schedule:update` | Cat A (CRUD) | Adjust exam dates, proctors, and rooms. |
+| `exam:schedule:delete` | Cat A (CRUD) | Delete an exam session schedule. |
+| `exam:grade:read` | Cat A (Read) | View recorded marks and component scores. |
+| `exam:grade:create` | Cat B (Dual-Control)| Record formative, summative, and homework scores for assigned classes. |
+| `exam:grade:update` | Cat B (Dual-Control)| Update recorded marks before grade submission deadline. |
+| `exam:grade:lock` | Cat B (Dual-Control)| Finalize and digitally lock grade entries to prevent further modifications. |
+| `exam:report-card:read` | Cat A (Read) | View compiled e-Rapor student progress reports. |
+| `exam:report-card:generate` | Cat B (Dual-Control)| Aggregate scores, attendance, extracurriculars, and generate draft report cards. |
+| `exam:report-card:publish` | Cat B (Dual-Control)| Officially certify and release digital e-Rapor cards to student and parent portals. |
+
+### 4.8 Finance, Fee Management & Cashbook (`finance:*`)
+
+| Permission String | Category | Description |
+|---|:---:|---|
+| `finance:fee:read` | Cat A (CRUD) | View fee catalog, fee schedules, and pricing rules. |
+| `finance:fee:create` | Cat A (CRUD) | Define new fee components (SPP, gedung, seragam) and scholarships. |
+| `finance:fee:update` | Cat A (CRUD) | Adjust fee amounts and discount criteria. |
+| `finance:fee:delete` | Cat A (CRUD) | Delete an unreferenced fee component. |
+| `finance:invoice:read` | Cat A (Read) | View student billing statements and invoices. |
+| `finance:invoice:create` | Cat A (CRUD) | Generate recurring monthly fee invoices and ad-hoc bills. |
+| `finance:payment:read` | Cat A (Read) | View payment history, payment receipts, and collection logs. |
+| `finance:payment:create` | Cat B (Dual-Control)| Record fee collection transactions and issue signed receipts. |
+| `finance:payment:void` | Cat B (Dual-Control)| Void or reverse an erroneously posted payment record (restricted privilege). |
+| `finance:report:read` | Cat A (Read) | View fee collection summaries, cashbook ledgers, and overdue arrears aging. |
+
+### 4.9 Human Resources & School Payroll (`hr:*`)
+
+| Permission String | Category | Description |
+|---|:---:|---|
+| `hr:staff:read` | Cat A (CRUD) | View staff master profiles, departments, and designations. |
+| `hr:staff:create` | Cat A (CRUD) | Register new employees and teachers. |
+| `hr:staff:update` | Cat A (CRUD) | Update employee records, contracts, NUPTK, and certifications. |
+| `hr:staff:delete` | Cat A (CRUD) | Remove an employee record (restricted high-privilege action). |
+| `hr:assignment:read` | Cat D (Orchestration)| View teacher subject allocations and homeroom appointments. |
+| `hr:assignment:manage` | Cat D (Orchestration)| Assign teaching allocations, subject responsibilities, and homeroom roles. |
+| `hr:leave:request` | Cat B (Dual-Control)| Submit employee leave applications. |
+| `hr:leave:approve` | Cat B (Dual-Control)| Review, approve, or reject staff leave requests. |
+| `hr:payroll:read` | Cat C (Workflow) | View salary components and personal/school payslips. |
+| `hr:payroll:calculate` | Cat C (Workflow) | Execute monthly payroll calculations based on attendance and teaching hours. |
+| `hr:payroll:disburse` | Cat C (Workflow) | Finalize payroll disbursement batches and release payslips. |
+
+### 4.10 Audit Trail (`audit:*`)
+
+| Permission String | Category | Description |
+|---|:---:|---|
+| `audit:log:read` | Audit | Inspect immutable audit logs of domain mutations. |
+
+---
+
+## 5. Role-to-Permission Matrix
+
+The following matrix defines the operational capabilities assigned to each standard role under the **Hybrid Authorization Model**.
 
 ### Legend
 - **`ALL`**: Complete administrative management across the resource (`domain:resource:*` or `domain:*`).
 - **`Read`**: Read-only access across the role's scope (`Tenant` for Foundation Board, `School` for School Staff).
-- **`Manage`**: Create, edit, and operate within the resource.
-- **`Scoped`**: Permission granted but dynamically bounded:
+- **`C / U`**: Create and Update only (deletion restricted).
+- **`C / U / D`**: Full CRUD (Create, Update, Delete).
+- **`Scoped`**: Permission granted but dynamically bounded by data ownership:
   - `Assigned`: Classes or subjects assigned to the teacher in the timetable.
   - `Homeroom`: Students belonging to the teacher's supervised homeroom class.
   - `Self`: User's own personal records.
   - `Ward`: Linked child/children of the parent (cross-school within the tenant).
-- **`Approve` / `Lock`**: Specific high-privilege governance workflow action.
+- **`Action Verbs`**: Specific high-privilege governance workflow actions (`Approve`, `Lock`, `Publish`, `Void`).
 - **`—`**: No access.
 
 | Resource / Capability | `SUPERADMIN` | `TENANT_ADMIN` | `FOUNDATION_BOARD` | `SCHOOL_ADMIN` | `PRINCIPAL` | `WAKA_KURIKULUM` | `WAKA_KESISWAAN` | `ACADEMIC_ADMIN` | `TEACHER` | `HOMEROOM_TEACHER` | `BURSAR` | `HR_OFFICER` | `STUDENT` | `PARENT` |
 |---|:---:|:---:|:---:|:---:|:---:|:---:|:---:|:---:|:---:|:---:|:---:|:---:|:---:|:---:|
 | **Operating Scope** | `GLOBAL` | `TENANT` | `TENANT` | `SCHOOL` | `SCHOOL` | `SCHOOL` | `SCHOOL` | `SCHOOL` | `ASSIGNED` | `HOMEROOM` | `SCHOOL/TENANT` | `SCHOOL/TENANT` | `SELF` | `WARD` |
+| **`tenant:management`** | ALL | Read | Read | — | — | — | — | — | — | — | — | — | — | — |
 | **`tenant:profile`** | ALL | ALL | Read | — | — | — | — | — | — | — | — | — | — | — |
 | **`tenant:school`** | ALL | ALL | Read | — | — | — | — | — | — | — | — | — | — | — |
-| **`tenant:audit`** | ALL | ALL | Read | — | — | — | — | — | — | — | — | — | — | — |
 | **`school:profile`** | ALL | ALL | Read | ALL | Read | Read | Read | Read | Read | Read | Read | Read | Read | Read |
 | **`school:settings`** | ALL | ALL | Read | ALL | Read | — | — | — | — | — | — | — | — | — |
 | **`school:user`** | ALL | ALL | Read | ALL | Read | — | — | — | — | — | — | — | — | — |
-| **`school:audit`** | ALL | ALL | Read | ALL | Read | — | — | — | — | — | — | — | — | — |
-| **`academic:year`** | ALL | Read | Read | ALL | ALL | ALL | Read | Read | Read | Read | Read | Read | Read | Read |
-| **`academic:term`** | ALL | Read | Read | ALL | ALL | ALL | Read | Read | Read | Read | Read | Read | Read | Read |
+| **`academic:year/term`** | ALL | Read | Read | ALL | ALL | ALL | Read | Read | Read | Read | Read | Read | Read | Read |
 | **`academic:curriculum`**| ALL | Read | Read | ALL | Read | ALL | — | Read | Read | Read | — | — | — | — |
-| **`academic:course`** | ALL | Read | Read | ALL | Read | ALL | — | Read | Read | Read | — | — | — | — |
-| **`academic:class`** | ALL | Read | Read | ALL | Read | ALL | Read | ALL | Read | Read | — | — | Scoped | Scoped |
-| **`academic:promotion`**| ALL | — | — | ALL | Approve | ALL | Read | Manage | — | Input | — | — | — | — |
-| **`student:profile`** | ALL | Read | Read | ALL | Read | Read | ALL | ALL | Scoped | Homeroom | Read | — | Self | Ward |
-| **`student:admission`**| ALL | Read | Read | ALL | Read | — | ALL | ALL | — | — | Read | — | — | — |
+| **`academic:course`** | ALL | Read | Read | ALL | Read | ALL | — | C / U | Read | Read | — | — | — | — |
+| **`academic:class`** | ALL | Read | Read | ALL | Read | ALL | Read | C / U | Read | Read | — | — | Scoped | Scoped |
+| **`academic:promotion`**| ALL | — | — | ALL | Approve | ALL | Read | Execute | — | Input | — | — | — | — |
+| **`student:profile`** | ALL | Read | Read | ALL | Read | Read | C / U / D | C / U | Scoped | Homeroom | Read | — | Self | Ward |
+| **`student:admission`**| ALL | Read | Read | ALL | Approve | — | ALL | Apply/Rev | — | — | Read | — | — | — |
 | **`student:enrollment`**| ALL | Read | Read | ALL | Read | Manage | ALL | ALL | — | — | — | — | — | — |
 | **`student:guardian`** | ALL | Read | Read | ALL | Read | — | Manage | ALL | — | Homeroom | Read | — | Self | Ward |
-| **`student:document`** | ALL | Read | — | ALL | Read | — | ALL | ALL | — | Homeroom | — | — | Self | Ward |
-| **`student:conduct`** | ALL | Read | Read | ALL | Read | Read | ALL | Read | Input | Homeroom | — | — | Self | Ward |
-| **`attendance:student`**| ALL | Read | Read | ALL | Read | Read | ALL | Manage | Assigned | Homeroom | — | — | Self | Ward |
+| **`student:document`** | ALL | Read | — | ALL | Read | — | C / U / D | C / U | — | Homeroom | — | — | Self | Ward |
+| **`student:conduct`** | ALL | Read | Read | ALL | Read | Read | C / U / D | Read | Record | Record/Edit | — | — | Self | Ward |
+| **`attendance:student`**| ALL | Read | Read | ALL | Read | Read | ALL | Manage | Record | Record/Excuse | — | — | Self | Ward/Excuse |
 | **`attendance:staff`** | ALL | Read | Read | ALL | ALL | Read | Read | Read | Self | Self | — | ALL | — | — |
 | **`timetable:schedule`**| ALL | Read | Read | ALL | Read | ALL | Read | Read | Assigned | Homeroom | — | — | Self | Ward |
 | **`timetable:calendar`**| ALL | Read | Read | ALL | ALL | ALL | ALL | Read | Read | Read | Read | Read | Read | Read |
 | **`exam:schedule`** | ALL | Read | Read | ALL | Read | ALL | Read | Read | Read | Read | — | — | Self | Ward |
-| **`exam:grade`** | ALL | Read | Read | ALL | Read | Read | — | Read | Assigned | Homeroom | — | — | Self | Ward |
-| **`exam:report-card`** | ALL | Read | Read | ALL | Lock | Review | Read | Generate | Input | Generate | — | — | Self | Ward |
+| **`exam:grade`** | ALL | Read | Read | ALL | Lock | Review | — | Read | Record/Edit | Record/Edit | — | — | Self | Ward |
+| **`exam:report-card`** | ALL | Read | Read | ALL | Publish | Review | Read | Generate | Input | Generate | — | — | Self | Ward |
 | **`finance:fee`** | ALL | Read | Read | ALL | Read | — | — | Read | — | — | ALL | — | Read | Read |
 | **`finance:invoice`** | ALL | Read | Read | ALL | Read | — | — | — | — | — | ALL | — | Self | Ward |
-| **`finance:payment`** | ALL | Read | Read | ALL | Read | — | — | — | — | — | ALL | — | Self | Ward |
+| **`finance:payment`** | ALL | Read | Read | ALL | Read | — | — | — | — | — | Create (No Void)| — | Self | Ward/Create |
 | **`finance:report`** | ALL | ALL | ALL | ALL | Read | — | — | — | — | — | ALL | — | — | — |
 | **`hr:staff`** | ALL | Read | Read | ALL | Read | Read | Read | Read | Self | Self | — | ALL | — | — |
 | **`hr:assignment`** | ALL | Read | Read | ALL | Read | ALL | — | Read | Read | Read | — | ALL | — | — |
@@ -455,9 +527,9 @@ The following matrix defines the operational capabilities assigned to each stand
 
 ---
 
-## 5. Security & Technical Implementation Guide
+## 6. Security & Technical Implementation Guide
 
-### 5.1 Enforcing Tenant Isolation vs. School Scoping
+### 6.1 Enforcing Tenant Isolation vs. School Scoping
 
 Ilmiya utilizes a two-tier context evaluation:
 1. **Tier 1 (Tenant Boundary)**: Evaluated at the HTTP filter and database query level via `TenantContext` (`ScopedValue<TenantId>`). The database automatically appends `tenant_id = :currentTenantId` to prevent cross-foundation leakage.
@@ -476,7 +548,7 @@ Incoming Request
 └───────────────┬─────────────────┘
                 ▼
 ┌─────────────────────────────────┐
-│       @RequirePermission        │───► Validates coarse permission (e.g. academic:year:write)
+│       @RequirePermission        │───► Validates fine permission (e.g. academic:course:create)
 └───────────────┬─────────────────┘
                 ▼
 ┌─────────────────────────────────┐
@@ -484,52 +556,11 @@ Incoming Request
 └─────────────────────────────────┘
 ```
 
-### 5.2 Dynamic Data Ownership Enforcement
+### 6.2 Wildcard Matching with the Hybrid Model
 
-While method-level security verifies the user holds the coarse-grained permission (e.g. `exam:grade:create`), use-case services enforce contextual data scoping before executing state changes:
+The `ed-iam` permission evaluation engine natively resolves hierarchical wildcards, enabling high-privilege administrators to maintain simple permission sets while enforcing strict boundaries on operational staff:
 
-```kotlin
-@Service
-class RecordExamGradeService(
-    private val schoolRepository: SchoolRepository,
-    private val timetablePort: TimetableQueryPort,
-    private val examGradeRepository: ExamGradeRepository
-) : RecordExamGradeUseCase {
-
-    override fun recordGrade(command: RecordExamGradeCommand) {
-        val currentActor = SecurityContextHolder.getActor()
-        val tenantId = TenantContext.current()
-
-        // 1. Verify the school belongs to the active tenant
-        val school = schoolRepository.findById(SchoolId.of(command.schoolId))
-            ?: throw ResourceNotFoundException("School", command.schoolId)
-        if (school.tenantId != tenantId) {
-            throw AccessDeniedException("School does not belong to the current tenant.")
-        }
-
-        // 2. If actor is a teacher, verify they are assigned to this specific batch and course
-        if (!currentActor.hasRole(Role.SCHOOL_ADMIN) && !currentActor.hasRole(Role.TENANT_ADMIN)) {
-            val isAssigned = timetablePort.isTeacherAssignedToBatch(
-                schoolId = school.id,
-                teacherId = currentActor.id,
-                batchId = command.classBatchId,
-                courseId = command.courseId
-            )
-            if (!isAssigned) {
-                throw AccessDeniedException("Teacher is not allocated to teach this class batch.")
-            }
-        }
-
-        // 3. Execute grade recording...
-    }
-}
-```
-
-### 5.3 Cross-School Parent Experience
-
-In multi-school foundations, a parent user account is created at the **Tenant Level**:
-- When authenticated, the parent JWT contains their tenant ID and linked child IDs (`wards`).
-- In the Parent Portal UI, the parent can select which child to view.
-- When viewing Child A (in Elementary School `sch-sd-01`), the portal queries `sch-sd-01` APIs.
-- When viewing Child B (in Junior High `sch-smp-01`), the portal queries `sch-smp-01` APIs under the same parent login credentials.
-- Invoicing and payment reconciliation aggregate under the parent identity while maintaining correct school-unit ledger bookkeeping.
+- **Full Domain Access**: `academic:*` automatically grants `:read`, `:create`, `:update`, `:delete`, `:execute`, and `:rollback`.
+- **Resource-Level Access**: `academic:course:*` automatically grants `academic:course:read`, `academic:course:create`, `academic:course:update`, and `academic:course:delete`.
+- **Restricted Access**: An Academic Clerk given `academic:course:read`, `academic:course:create`, and `academic:course:update` has full authoring capability **without** the permission to delete courses.
+- **Financial Segregation**: A bursar cashier given `finance:payment:create` and `finance:payment:read` can collect SPP and issue receipts, but **cannot** call endpoints guarded by `finance:payment:void`.
