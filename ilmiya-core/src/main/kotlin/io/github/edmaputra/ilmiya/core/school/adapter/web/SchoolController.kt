@@ -40,6 +40,7 @@ class SchoolController(
      * Lists registered schools and tenant boundaries with pagination.
      */
     @GetMapping
+    @RequirePermission(IlmiyaPermissions.SCHOOL_PROFILE_READ)
     fun listSchools(
         @RequestParam(defaultValue = "0") page: Int,
         @RequestParam(defaultValue = "20") size: Int
@@ -61,6 +62,7 @@ class SchoolController(
      * Registers and provisions a new school and tenant boundary.
      */
     @PostMapping
+    @RequirePermission(IlmiyaPermissions.SCHOOL_REGISTER)
     fun registerSchool(
         @Valid @RequestBody request: RegisterSchoolRequest
     ): ResponseEntity<SchoolResponse> {

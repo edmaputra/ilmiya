@@ -34,7 +34,8 @@ object IlmiyaPermissions {
     // =========================================================================
     // School Profile, Settings & Users Context (school:*)
     // =========================================================================
-    // School Profile (Category D)
+    // School Profile & Registration (Category D)
+    const val SCHOOL_REGISTER = "school:registration:create"
     const val SCHOOL_PROFILE_READ = "school:profile:read"
     const val SCHOOL_PROFILE_UPDATE = "school:profile:update"
     const val SCHOOL_PROFILE_WRITE = SCHOOL_PROFILE_UPDATE // Legacy alias for backward compatibility
