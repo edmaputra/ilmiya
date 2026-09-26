@@ -159,6 +159,7 @@ class LocalDataSeeder(
         log.info("Checking local IAM seed data...")
 
         val schoolAdminPermissions = setOf(
+            IlmiyaPermissions.SCHOOL_REGISTER,
             IlmiyaPermissions.SCHOOL_PROFILE_READ,
             IlmiyaPermissions.SCHOOL_PROFILE_WRITE,
             IlmiyaPermissions.SCHOOL_SETTINGS_MANAGE,
