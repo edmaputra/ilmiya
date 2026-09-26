@@ -5,66 +5,107 @@
 **Ilmiya** is a multi-tenant School Management System (SMS) and Educational ERP designed for primary, secondary, vocational, and Islamic educational institutions (SD, SMP, SMA, SMK, MI, MTs, MA, and Pesantren).
 
 This document establishes the official business and security specification for **Role-Based Access Control (RBAC)** in Ilmiya. It defines:
-1. **Tenancy and Authorization Scopes**
-2. **Standard User Roles** across administrative, academic, operational, and self-service tiers
+1. **Tenancy, School, and Contextual Scopes** (distinguishing Tenant vs. School boundaries)
+2. **Standard User Roles** across foundation, institutional, operational, and self-service tiers
 3. **Fine-Grained Permissions Catalog** structured in `{domain}:{resource}:{action}` notation
 4. **Role-to-Permission Matrix** detailing operational capabilities and contextual boundaries
+5. **Technical Implementation Patterns** for multi-tenant and school-scoped enforcement
 
 ---
 
-## 1. Tenancy Hierarchy & Authorization Scopes
+## 1. Tenancy Hierarchy: Tenant vs. School
 
-Ilmiya employs a multi-tenant architecture with strict tenant isolation enforced at both the application layer (`TenantContext` powered by Java 25 `ScopedValue`) and the database layer (tenant discriminator column `tenant_id`).
+In educational governance—particularly within foundations (*Yayasan*), school boards, or educational trusts—an organization frequently operates **multiple educational units** (e.g., an elementary school, junior high, senior high, and a pesantren). 
 
-### Authorization Levels
+Ilmiya explicitly distinguishes between **`TENANT`** and **`SCHOOL`**:
+
+```
+Platform (Ilmiya Multi-Tenant Cloud / On-Premise)
+   │
+   └── Tenant: Yayasan Darussalam (tenant_id)
+         │
+         ├── School 1: SD Islam Darussalam (school_id: sch-sd-01)
+         ├── School 2: SMP Islam Darussalam (school_id: sch-smp-01)
+         ├── School 3: SMA Islam Darussalam (school_id: sch-sma-01)
+         └── School 4: Pesantren Darussalam (school_id: sch-pes-01)
+```
+
+### 1.1 Architectural Comparison
+
+| Dimension | `TENANT` (Organization / Foundation) | `SCHOOL` (Educational Unit / Campus) |
+|---|---|---|
+| **Identity** | `TenantId` (UUID string) | `SchoolId` (typed entity identifier) |
+| **Real-World Entity** | Foundation (*Yayasan*), School Board, District, or Enterprise Account | Individual School, Madrasah, Vocational College, or Pesantren Unit |
+| **Data Boundary** | **Hard Database Isolation**: Enforced by discriminator column `tenant_id` and Java 25 `ScopedValue` (`TenantContext`). Zero cross-tenant data leakage. | **Soft Relational Isolation**: Data belongs to a specific school unit (`school_id`), but resides within the same tenant boundary. |
+| **Governance Scope** | Cross-school oversight, consolidated finances, platform billing/subscription, and centralized guardian/parent identity. | Local institutional operations, curriculum layout, classes, timetables, grading, e-Rapor, and daily attendance. |
+| **Legal & Reg Identifiers** | Foundation legal deed, Tax ID (NPWP Yayasan), tenant billing account. | NPSN (Nomor Pokok Sekolah Nasional), institutional code, accreditation certificate (A/B/C), school address. |
+| **Typical Leadership** | Foundation Board (*Pengurus Yayasan*), Foundation IT Admin. | Principal (*Kepala Sekolah / Mudir*), Vice Principals (*Waka*), School Admin. |
+
+> [!IMPORTANT]
+> **Single-School vs. Multi-School Tenants**:
+> - **Single-School Tenant**: An independent private or public school where 1 Tenant = 1 School.
+> - **Multi-School Tenant**: An educational foundation (*Yayasan*) where 1 Tenant = N Schools. Centralized administrators and parents operate across schools, while teachers, principals, and students operate within their specific school unit.
+
+---
+
+### 1.2 Authorization Levels
 
 ```mermaid
 flowchart TD
-    subgraph PlatformLevel["Platform Level (Cross-Tenant)"]
+    subgraph PlatformLevel["1. Platform Level (Cross-Tenant)"]
         SUPERADMIN["SUPERADMIN (Platform Operator)"]
     end
 
-    subgraph TenantLevel["Tenant Level (School-Scoped: tenant_id)"]
-        subgraph Governance["Governance & Leadership"]
-            ADM["SCHOOL_ADMIN"]
-            YAY["FOUNDATION_BOARD"]
-            KS["PRINCIPAL"]
-            WKK["VICE_PRINCIPAL_ACADEMIC"]
-            WKS["VICE_PRINCIPAL_STUDENTS"]
-        end
+    subgraph TenantLevel["2. Tenant Level (Yayasan / Organization Scope: tenant_id)"]
+        YAY["FOUNDATION_BOARD (Pengurus Yayasan)"]
+        TADM["TENANT_ADMIN (Yayasan IT Admin)"]
+        TCF["CENTRAL_BURSAR (Bendahara Pusat Yayasan)"]
 
-        subgraph Operations["Academic & Operational Staff"]
-            TU["ACADEMIC_ADMIN (TU)"]
-            TCH["TEACHER"]
-            HRT["HOMEROOM_TEACHER"]
-            BUR["BURSAR"]
-            HR["HR_OFFICER"]
-            DORM["DORMITORY_WARDEN (Pesantren)"]
-        end
+        subgraph SchoolLevel["3. School Level (Campus / Unit Scope: school_id)"]
+            subgraph SchoolLeadership["School Leadership"]
+                SADM["SCHOOL_ADMIN (Admin Sekolah)"]
+                KS["PRINCIPAL (Kepala Sekolah)"]
+                WKK["VICE_PRINCIPAL_ACADEMIC (Waka Kurikulum)"]
+                WKS["VICE_PRINCIPAL_STUDENTS (Waka Kesiswaan)"]
+            end
 
-        subgraph SelfService["Self-Service End-Users"]
-            STD["STUDENT"]
-            PRN["PARENT"]
+            subgraph SchoolOperations["Academic & Operational Staff"]
+                TU["ACADEMIC_ADMIN (TU / Registrar)"]
+                TCH["TEACHER (Guru Mapel)"]
+                HRT["HOMEROOM_TEACHER (Wali Kelas)"]
+                BUR["BURSAR (Bendahara Unit Sekolah)"]
+                HR["HR_OFFICER (Staf Kepegawaian)"]
+                DORM["DORMITORY_WARDEN (Pembina Asrama)"]
+            end
+
+            subgraph EndUsers["Self-Service End-Users"]
+                STD["STUDENT (Siswa / Santri)"]
+                PRN["PARENT (Orang Tua / Wali)"]
+            end
         end
     end
 
     SUPERADMIN --> TenantLevel
-    Governance --> Operations
-    Operations --> SelfService
+    TenantLevel --> SchoolLevel
+    SchoolLeadership --> SchoolOperations
+    SchoolOperations --> EndUsers
 ```
 
-### Data Boundary Scopes
+---
 
-In addition to coarse-grained role permissions, Ilmiya evaluates **contextual data boundaries**:
+### 1.3 Contextual Data Boundary Scopes
 
-| Scope Code | Scope Name | Description | Example Application |
-|---|---|---|---|
-| **`GLOBAL`** | Platform-Wide | Applies across all tenants. Only accessible by platform superadministrators. | Tenant provisioning, platform subscription management |
-| **`TENANT`** | Institutional Scope | Bound to the active tenant (`tenant_id`). User can access all matching records across the school. | Academic admin browsing all student records |
-| **`HOMEROOM`** | Homeroom Scope | Restricted to the student batch or class supervised by the homeroom teacher (*Wali Kelas*). | Reviewing semester e-Rapor remarks, checking morning roll call |
-| **`ASSIGNED`** | Subject / Teacher Scope | Restricted to classes, courses, or subjects directly allocated to the teacher in the timetable. | Recording midterm exam marks for 10-A Mathematics |
-| **`SELF`** | User Self-Service | Restricted strictly to the authenticated user's own profile and records. | Teacher requesting annual leave, student viewing schedule |
-| **`WARD`** | Guardian Scope | Restricted to students actively linked to the parent/guardian user account. | Parent viewing report cards and paying SPP fees for their children |
+Beyond coarse-grained role permissions, Ilmiya evaluates **contextual data boundaries**:
+
+| Scope Code | Scope Name | Boundary Level | Description | Example Application |
+|---|---|---|---|---|
+| **`GLOBAL`** | Platform-Wide | Platform | Applies across all tenants. Only accessible by platform superadministrators. | Tenant provisioning, global system health, infrastructure migrations |
+| **`TENANT`** | Organization Scope | Tenant (`tenant_id`) | Encompasses all schools and units under the active tenant foundation. | Foundation board reviewing consolidated tuition income across 4 schools |
+| **`SCHOOL`** | School Unit Scope | School (`school_id`) | Constrained to a specific school unit within the tenant. | Principal approving academic term calendars for SMP Islam Darussalam |
+| **`HOMEROOM`** | Homeroom Scope | Class Batch | Restricted to the student batch or class supervised by the homeroom teacher (*Wali Kelas*). | Reviewing semester e-Rapor remarks, checking morning roll call |
+| **`ASSIGNED`** | Subject / Teacher Scope | Teaching Slot | Restricted to classes, courses, or subjects directly allocated to the teacher in the timetable. | Recording midterm exam marks for 10-A Mathematics |
+| **`SELF`** | User Self-Service | User Profile | Restricted strictly to the authenticated user's own profile and records. | Teacher requesting annual leave, student viewing personal exam schedule |
+| **`WARD`** | Guardian Scope | Linked Children | Restricted to students actively linked to the parent/guardian user account across the tenant. | Parent viewing report cards for Child A (in SD) and Child B (in SMP) under one login |
 
 ---
 
@@ -75,58 +116,71 @@ Roles in Ilmiya represent logical collections of permissions suited to instituti
 ### Tier 1: Platform Administration
 
 #### `SUPERADMIN` (Platform Administrator)
-- **Persona**: Ilmiya SaaS operations engineer or hosting provider system administrator.
 - **Scope**: Platform-wide (`GLOBAL`).
+- **Persona**: Ilmiya SaaS operations engineer or hosting provider system administrator.
 - **Responsibilities**:
   - Provision, activate, suspend, and archive school tenants.
   - Monitor global system health, database migrations, and resource metrics.
-  - Manage platform-wide feature flags and licensing.
+  - Manage platform-wide feature flags and tenant licensing tiers.
   - Does not participate in daily school academic operations.
 
 ---
 
-### Tier 2: Institutional Leadership & Governance
+### Tier 2: Foundation & Organization Governance (Tenant Scope)
+
+#### `TENANT_ADMIN` (Administrator Yayasan / Foundation Admin)
+- **Scope**: Entire Foundation (`TENANT`).
+- **Persona**: Foundation central IT director or management executive.
+- **Responsibilities**:
+  - Register and provision new school units (`SchoolId`) under the foundation tenant.
+  - Manage tenant-wide security policies, SSO integrations, and subscription billing.
+  - Assign foundation-level roles and supervise school-level administrator accounts.
+  - Access tenant-wide audit trails.
+
+#### `FOUNDATION_BOARD` (Pengurus Yayasan / Board of Trustees)
+- **Scope**: Entire Foundation (`TENANT`).
+- **Persona**: Board member, foundation trustee, or executive director managing one or multiple schools under a yayasan.
+- **Responsibilities**:
+  - Strategic oversight of student enrollment, retention trends, and capacity across all schools.
+  - Consolidated financial reporting (overall tuition collection, outstanding arrears aging, foundation cash balances).
+  - High-level academic performance summaries and graduation rates across units.
+  - Read-only governance access; no day-to-day transactional entry.
+
+---
+
+### Tier 3: School Leadership & Governance (School Scope)
 
 #### `SCHOOL_ADMIN` (Administrator Sekolah)
+- **Scope**: Specific School Unit (`SCHOOL`).
 - **Persona**: School IT administrator or head of administrative computer operations.
-- **Scope**: Entire School (`TENANT`).
 - **Responsibilities**:
-  - Full configuration of the school tenant profile (name, NPSN, address, branding).
-  - Setup institutional operational settings (working days, grading format preference, term layouts).
-  - Manage tenant staff user accounts, password resets, and role assignments.
-  - Access system audit logs and data export/import utilities.
-
-#### `FOUNDATION_BOARD` (Pengurus Yayasan / School Board)
-- **Persona**: Board member, foundation trustee, or executive director managing one or multiple schools under a yayasan.
-- **Scope**: Entire School / Multi-School Group (`TENANT`).
-- **Responsibilities**:
-  - Executive oversight of institutional enrollment and retention trends.
-  - High-level financial reporting (tuition revenue collection vs. outstanding arrears).
-  - High-level academic performance summaries and graduation rates.
-  - Read-only access to institutional audit trails; no day-to-day transaction entry.
+  - Configure the school profile (school name, NPSN, address, contact, branding logo).
+  - Setup school operational settings (working days, grading format preference, term layouts).
+  - Manage school staff user accounts, password resets, and role assignments for the school.
+  - Access school-level audit logs and data export/import utilities.
 
 #### `PRINCIPAL` (Kepala Sekolah / Mudir)
-- **Persona**: Head of school or head of madrasah/pesantren.
-- **Scope**: Entire School (`TENANT`).
+- **Scope**: Specific School Unit (`SCHOOL`).
+- **Persona**: Head of school, madrasah headmaster, or mudir pesantren.
 - **Responsibilities**:
-  - Institutional governance and policy compliance.
-  - Final approval and locking of semester grades and e-Rapor report cards.
+  - Institutional governance, staff leadership, and academic policy compliance.
+  - Final approval and digital locking of semester grades and e-Rapor report cards.
   - Final approval of staff leave requests and major disciplinary actions.
-  - Institutional reporting to government education boards (Dapodik / EMIS).
+  - Sign off on official compliance reports (Dapodik / EMIS).
 
 #### `VICE_PRINCIPAL_ACADEMIC` (Wakil Kepala Sekolah Bidang Kurikulum)
+- **Scope**: Specific School Unit (`SCHOOL`).
 - **Persona**: Vice principal for curriculum and academic development.
-- **Scope**: Entire School (`TENANT`).
 - **Responsibilities**:
   - Configure academic years, semesters/terms, and curriculum frameworks (Kurikulum Merdeka / K13).
-  - Maintain subject catalog and allocate subjects to classes.
-  - Design and publish timetable schedules and institutional academic calendars.
+  - Maintain master subject catalog and allocate subjects to classes.
+  - Design and publish class timetable schedules and institutional academic calendars.
   - Oversee exam schedules, assessment components, and grade submission deadlines.
   - Execute end-of-year student promotion and graduation workflows.
 
 #### `VICE_PRINCIPAL_STUDENTS` (Wakil Kepala Sekolah Bidang Kesiswaan)
+- **Scope**: Specific School Unit (`SCHOOL`).
 - **Persona**: Vice principal for student affairs and extracurricular activities.
-- **Scope**: Entire School (`TENANT`).
 - **Responsibilities**:
   - Oversee student admissions (PPDB / Penerimaan Peserta Didik Baru).
   - Manage student conduct, disciplinary infractions, and merit/demerit point records.
@@ -135,11 +189,11 @@ Roles in Ilmiya represent logical collections of permissions suited to instituti
 
 ---
 
-### Tier 3: Academic, Operational & Administrative Staff
+### Tier 4: Academic, Operational & Administrative Staff (School Scope)
 
 #### `ACADEMIC_ADMIN` (Staf Tata Usaha / TU / Registrar)
+- **Scope**: Specific School Unit (`SCHOOL`).
 - **Persona**: School administration office staff (*Staf Tata Usaha*).
-- **Scope**: Entire School (`TENANT`).
 - **Responsibilities**:
   - Register new students and verify civil documents (birth certificates, KK, NISN).
   - Manage class batch enrollments and class transfers.
@@ -147,8 +201,8 @@ Roles in Ilmiya represent logical collections of permissions suited to instituti
   - Compile and verify Dapodik/EMIS export datasets.
 
 #### `TEACHER` (Guru Mata Pelajaran / Ustadz)
+- **Scope**: Assigned Classes & Subjects (`ASSIGNED`) within `SCHOOL`, plus self-service (`SELF`).
 - **Persona**: Subject educator or pesantren religious teacher.
-- **Scope**: Assigned classes and subjects (`ASSIGNED`), plus self-service (`SELF`).
 - **Responsibilities**:
   - View personal teaching timetable and schedule allocations.
   - Take period-level subject attendance during teaching blocks.
@@ -156,8 +210,8 @@ Roles in Ilmiya represent logical collections of permissions suited to instituti
   - Provide qualitative remarks on student learning competencies.
 
 #### `HOMEROOM_TEACHER` (Wali Kelas)
+- **Scope**: Supervised Class Batch (`HOMEROOM`) within `SCHOOL`, plus `TEACHER` permissions.
 - **Persona**: Classroom supervisor and primary student mentor.
-- **Scope**: Supervised class batch (`HOMEROOM`), in addition to `TEACHER` permissions.
 - **Responsibilities**:
   - Conduct daily morning roll call and track student absence reasons (sakit, izin, alpa).
   - Verify parent doctor's notes and excuse letters.
@@ -166,8 +220,8 @@ Roles in Ilmiya represent logical collections of permissions suited to instituti
   - Generate and review draft student report cards before principal lock.
 
 #### `BURSAR` (Bendahara / Staf Keuangan)
+- **Scope**: Specific School Unit (`SCHOOL`) or Foundation Central (`TENANT` if centralized).
 - **Persona**: School cashier, bursar, or finance officer (*Tata Usaha Keuangan*).
-- **Scope**: Entire School (`TENANT`).
 - **Responsibilities**:
   - Configure fee schedules (SPP bulanan, uang gedung/pangkal, praktikum, seragam, buku).
   - Set up student fee concessions, scholarships (KIP, Beasiswa Prestasi), and sibling discounts.
@@ -176,8 +230,8 @@ Roles in Ilmiya represent logical collections of permissions suited to instituti
   - Maintain daily cashbooks and prepare debt/arrears tracking reports.
 
 #### `HR_OFFICER` (Staf Kepegawaian / HR)
+- **Scope**: Specific School Unit (`SCHOOL`) or Foundation Central (`TENANT` if centralized).
 - **Persona**: Human resources officer or administrative staff in charge of employment.
-- **Scope**: Entire School (`TENANT`).
 - **Responsibilities**:
   - Maintain employee records for permanent teachers (GTY/PNS), honorarium teachers (GTT), and administrative staff.
   - Track employment contracts, NUPTK, certifications, and teaching hour quotas.
@@ -185,8 +239,8 @@ Roles in Ilmiya represent logical collections of permissions suited to instituti
   - Calculate monthly payroll batches, allowances (tunjangan wali kelas/mengajar), deductions (kasbon), and distribute payslips.
 
 #### `DORMITORY_WARDEN` (Pembina Asrama / Musyrif) *(Pesantren / Boarding)*
+- **Scope**: Supervised Dormitory Rooms/Halqah (`HOMEROOM` equivalent) within `SCHOOL`.
 - **Persona**: Boarding school supervisor or pesantren dorm mentor (*Musyrif / Musyrifah*).
-- **Scope**: Supervised dormitory rooms/halqah (`HOMEROOM` equivalent).
 - **Responsibilities**:
   - Manage boarding student check-in, night curfews, and hostel attendance.
   - Monitor boarding routines (shalat berjamaah, tahfidz Al-Qur'an, kajian kitab kuning).
@@ -195,11 +249,11 @@ Roles in Ilmiya represent logical collections of permissions suited to instituti
 
 ---
 
-### Tier 4: Self-Service End-Users
+### Tier 5: Self-Service End-Users
 
 #### `STUDENT` (Siswa / Santri)
+- **Scope**: Self (`SELF`) within their enrolled `SCHOOL`.
 - **Persona**: Enrolled student or pesantren santri.
-- **Scope**: Self (`SELF`).
 - **Responsibilities**:
   - View personal daily timetable, room locations, and teacher allocations.
   - View personal attendance history and monthly summary percentages.
@@ -208,8 +262,9 @@ Roles in Ilmiya represent logical collections of permissions suited to instituti
   - View fee billing status and payment history.
 
 #### `PARENT` (Orang Tua / Wali Murid)
+- **Scope**: Linked Children (`WARD`) across all schools in the `TENANT`.
 - **Persona**: Father, mother, or legal guardian of enrolled students.
-- **Scope**: Linked children (`WARD`).
+- **Key Tenancy Feature**: A single parent user account is bound to the **Tenant**, allowing them to switch seamlessly between children studying in different schools under the same foundation (e.g. child in Elementary and child in High School).
 - **Responsibilities**:
   - View real-time attendance alerts and morning roll call notifications for linked children.
   - Submit digital absence requests along with doctor's notes (surat keterangan dokter).
@@ -221,24 +276,34 @@ Roles in Ilmiya represent logical collections of permissions suited to instituti
 
 ## 3. Fine-Grained Permissions Catalog
 
-All permissions adhere strictly to the `{domain}:{resource}:{action}` naming convention, facilitating wildcard-based security definitions in `@RequirePermission` evaluations.
+All permissions adhere strictly to `{domain}:{resource}:{action}` syntax, supporting `ed-iam` wildcard matching (`domain:*` or `domain:resource:*`).
 
-### 3.1 School & Core Administration (`school:*`)
+### 3.1 Tenant & Foundation Administration (`tenant:*`)
 
 | Permission String | Description |
 |---|---|
-| `school:profile:read` | View institutional profile (name, NPSN, address, contact). |
+| `tenant:profile:read` | View foundation/tenant profile, corporate data, and registered schools. |
+| `tenant:profile:write` | Update foundation/tenant profile and corporate parameters. |
+| `tenant:school:manage` | Register, activate, deactivate, or archive school units under the tenant. |
+| `tenant:subscription:read` | View platform subscription tier, renewal dates, and license limits. |
+| `tenant:audit:read` | Inspect cross-school immutable audit logs across the tenant. |
+
+### 3.2 School Profile & Settings (`school:*`)
+
+| Permission String | Description |
+|---|---|
+| `school:profile:read` | View school unit profile details (NPSN, address, contact, branding). |
 | `school:profile:write` | Modify school profile, accreditation details, and branding assets. |
 | `school:settings:manage` | Configure operational parameters (working days, grading preference, term layout). |
-| `school:user:manage` | Create, invite, deactivate user accounts, and assign tenant roles. |
-| `school:audit:read` | Inspect immutable audit logs of domain mutations. |
+| `school:user:manage` | Create, invite, deactivate user accounts, and assign school-level roles. |
+| `school:audit:read` | Inspect school-level immutable audit logs. |
 
-### 3.2 Academic Structure & Curriculum (`academic:*`)
+### 3.3 Academic Structure & Curriculum (`academic:*`)
 
 | Permission String | Description |
 |---|---|
 | `academic:year:read` | View academic years and operational status. |
-| `academic:year:write` | Create and activate/archive academic years. |
+| `academic:year:write` | Create and activate/archive academic years for the school. |
 | `academic:term:read` | View academic terms and semester boundaries. |
 | `academic:term:write` | Add, activate, and close academic terms/semesters. |
 | `academic:curriculum:read` | Browse curriculum frameworks, learning objectives, and syllabi. |
@@ -249,7 +314,7 @@ All permissions adhere strictly to the `{domain}:{resource}:{action}` naming con
 | `academic:class:write` | Create and configure class sections (e.g. 7-A, 10-IPA-1) and capacity. |
 | `academic:promotion:manage` | Execute student batch promotion, retention, and graduation workflows. |
 
-### 3.3 Student Lifecycle & Admissions (`student:*`)
+### 3.4 Student Lifecycle & Admissions (`student:*`)
 
 | Permission String | Description |
 |---|---|
@@ -263,7 +328,7 @@ All permissions adhere strictly to the `{domain}:{resource}:{action}` naming con
 | `student:conduct:read` | View student disciplinary records, merit/demerit points, and awards. |
 | `student:conduct:manage` | Record behavioral infractions, counseling notes, and merit points. |
 
-### 3.4 Attendance Tracking (`attendance:*`)
+### 3.5 Attendance Tracking (`attendance:*`)
 
 | Permission String | Description |
 |---|---|
@@ -275,7 +340,7 @@ All permissions adhere strictly to the `{domain}:{resource}:{action}` naming con
 | `attendance:staff:record` | Record staff daily attendance check-in/check-out. |
 | `attendance:staff:approve` | Review and approve staff attendance corrections or remote check-ins. |
 
-### 3.5 Timetable & Institutional Calendar (`timetable:*`)
+### 3.6 Timetable & Institutional Calendar (`timetable:*`)
 
 | Permission String | Description |
 |---|---|
@@ -284,7 +349,7 @@ All permissions adhere strictly to the `{domain}:{resource}:{action}` naming con
 | `timetable:calendar:read` | View school calendar events, exam weeks, and holidays. |
 | `timetable:calendar:manage` | Create, update, and publish institutional events, holidays, and schedule adjustments. |
 
-### 3.6 Examination, Assessment & e-Rapor (`exam:*`)
+### 3.7 Examination, Assessment & e-Rapor (`exam:*`)
 
 | Permission String | Description |
 |---|---|
@@ -298,7 +363,7 @@ All permissions adhere strictly to the `{domain}:{resource}:{action}` naming con
 | `exam:report-card:generate` | Aggregate scores, attendance, extracurriculars, and generate draft report cards. |
 | `exam:report-card:publish` | Publish certified digital e-Rapor cards to student and parent portals. |
 
-### 3.7 Finance, Fee Management & Cashbook (`finance:*`)
+### 3.8 Finance, Fee Management & Cashbook (`finance:*`)
 
 | Permission String | Description |
 |---|---|
@@ -311,7 +376,7 @@ All permissions adhere strictly to the `{domain}:{resource}:{action}` naming con
 | `finance:payment:void` | Void erroneously posted payment records (restricted privilege). |
 | `finance:report:read` | View fee collection summaries, cashbook ledgers, and overdue arrears aging. |
 
-### 3.8 Human Resources & School Payroll (`hr:*`)
+### 3.9 Human Resources & School Payroll (`hr:*`)
 
 | Permission String | Description |
 |---|---|
@@ -325,7 +390,7 @@ All permissions adhere strictly to the `{domain}:{resource}:{action}` naming con
 | `hr:payroll:calculate` | Execute monthly payroll calculations based on attendance and teaching hours. |
 | `hr:payroll:disburse` | Finalize payroll disbursement batches and release payslips. |
 
-### 3.9 Audit Trail & System Observability (`audit:*`)
+### 3.10 Audit Trail (`audit:*`)
 
 | Permission String | Description |
 |---|---|
@@ -335,83 +400,88 @@ All permissions adhere strictly to the `{domain}:{resource}:{action}` naming con
 
 ## 4. Role-to-Permission Matrix
 
-The following matrix defines the operational capabilities assigned to each standard role.
+The following matrix defines the operational capabilities assigned to each standard role across **Tenant** and **School** scopes.
 
 ### Legend
 - **`ALL`**: Complete administrative management across the resource (`domain:resource:*` or `domain:*`).
-- **`Read`**: Read-only access across the entire school tenant.
+- **`Read`**: Read-only access across the role's scope (`Tenant` for Foundation Board, `School` for School Staff).
 - **`Manage`**: Create, edit, and operate within the resource.
-- **`Scoped`**: Permission granted but dynamically bounded by data ownership:
-  - `Assigned`: Classes or subjects assigned to the teacher.
-  - `Homeroom`: Students belonging to the teacher's supervised homeroom.
-  - `Self`: User's own personal data.
-  - `Ward`: Linked child/children of the parent.
+- **`Scoped`**: Permission granted but dynamically bounded:
+  - `Assigned`: Classes or subjects assigned to the teacher in the timetable.
+  - `Homeroom`: Students belonging to the teacher's supervised homeroom class.
+  - `Self`: User's own personal records.
+  - `Ward`: Linked child/children of the parent (cross-school within the tenant).
 - **`Approve` / `Lock`**: Specific high-privilege governance workflow action.
 - **`—`**: No access.
 
-| Resource / Capability | `SUPERADMIN` | `SCHOOL_ADMIN` | `FOUNDATION_BOARD` | `PRINCIPAL` | `WAKA_KURIKULUM` | `WAKA_KESISWAAN` | `ACADEMIC_ADMIN` | `TEACHER` | `HOMEROOM_TEACHER` | `BURSAR` | `HR_OFFICER` | `STUDENT` | `PARENT` |
-|---|:---:|:---:|:---:|:---:|:---:|:---:|:---:|:---:|:---:|:---:|:---:|:---:|:---:|
-| **`school:profile`** | ALL | ALL | Read | Read | Read | Read | Read | Read | Read | Read | Read | Read | Read |
-| **`school:settings`** | ALL | ALL | Read | Read | — | — | — | — | — | — | — | — | — |
-| **`school:user`** | ALL | ALL | — | Read | — | — | — | — | — | — | — | — | — |
-| **`school:audit`** | ALL | ALL | Read | Read | — | — | — | — | — | — | — | — | — |
-| **`academic:year`** | ALL | ALL | Read | ALL | ALL | Read | Read | Read | Read | Read | Read | Read | Read |
-| **`academic:term`** | ALL | ALL | Read | ALL | ALL | Read | Read | Read | Read | Read | Read | Read | Read |
-| **`academic:curriculum`**| ALL | ALL | Read | Read | ALL | — | Read | Read | Read | — | — | — | — |
-| **`academic:course`** | ALL | ALL | Read | Read | ALL | — | Read | Read | Read | — | — | — | — |
-| **`academic:class`** | ALL | ALL | Read | Read | ALL | Read | ALL | Read | Read | — | — | Scoped | Scoped |
-| **`academic:promotion`**| ALL | ALL | — | Approve | ALL | Read | Manage | — | Input | — | — | — | — |
-| **`student:profile`** | ALL | ALL | Read | Read | Read | ALL | ALL | Scoped | Homeroom | Read | — | Self | Ward |
-| **`student:admission`**| ALL | ALL | Read | Read | — | ALL | ALL | — | — | Read | — | — | — |
-| **`student:enrollment`**| ALL | ALL | Read | Read | Manage | ALL | ALL | — | — | — | — | — | — |
-| **`student:guardian`** | ALL | ALL | — | Read | — | Manage | ALL | — | Homeroom | Read | — | Self | Ward |
-| **`student:document`** | ALL | ALL | — | Read | — | ALL | ALL | — | Homeroom | — | — | Self | Ward |
-| **`student:conduct`** | ALL | ALL | Read | Read | Read | ALL | Read | Input | Homeroom | — | — | Self | Ward |
-| **`attendance:student`**| ALL | ALL | Read | Read | Read | ALL | Manage | Assigned | Homeroom | — | — | Self | Ward |
-| **`attendance:staff`** | ALL | ALL | Read | ALL | Read | Read | Read | Self | Self | — | ALL | — | — |
-| **`timetable:schedule`**| ALL | ALL | Read | Read | ALL | Read | Read | Assigned | Homeroom | — | — | Self | Ward |
-| **`timetable:calendar`**| ALL | ALL | Read | ALL | ALL | ALL | Read | Read | Read | Read | Read | Read | Read |
-| **`exam:schedule`** | ALL | ALL | Read | Read | ALL | Read | Read | Read | Read | — | — | Self | Ward |
-| **`exam:grade`** | ALL | ALL | Read | Read | Read | — | Read | Assigned | Homeroom | — | — | Self | Ward |
-| **`exam:report-card`** | ALL | ALL | Read | Lock | Review | Read | Generate | Input | Generate | — | — | Self | Ward |
-| **`finance:fee`** | ALL | ALL | Read | Read | — | — | Read | — | — | ALL | — | Read | Read |
-| **`finance:invoice`** | ALL | ALL | Read | Read | — | — | — | — | — | ALL | — | Self | Ward |
-| **`finance:payment`** | ALL | ALL | Read | Read | — | — | — | — | — | ALL | — | Self | Ward |
-| **`finance:report`** | ALL | ALL | ALL | Read | — | — | — | — | — | ALL | — | — | — |
-| **`hr:staff`** | ALL | ALL | Read | Read | Read | Read | Read | Self | Self | — | ALL | — | — |
-| **`hr:assignment`** | ALL | ALL | Read | Read | ALL | — | Read | Read | Read | — | ALL | — | — |
-| **`hr:leave`** | ALL | ALL | — | Approve | — | — | — | Request | Request | Request | ALL | — | — |
-| **`hr:payroll`** | ALL | ALL | Read | Read | — | — | — | Self | Self | Read | ALL | — | — |
-| **`audit:log`** | ALL | ALL | Read | Read | — | — | — | — | — | — | — | — | — |
+| Resource / Capability | `SUPERADMIN` | `TENANT_ADMIN` | `FOUNDATION_BOARD` | `SCHOOL_ADMIN` | `PRINCIPAL` | `WAKA_KURIKULUM` | `WAKA_KESISWAAN` | `ACADEMIC_ADMIN` | `TEACHER` | `HOMEROOM_TEACHER` | `BURSAR` | `HR_OFFICER` | `STUDENT` | `PARENT` |
+|---|:---:|:---:|:---:|:---:|:---:|:---:|:---:|:---:|:---:|:---:|:---:|:---:|:---:|:---:|
+| **Operating Scope** | `GLOBAL` | `TENANT` | `TENANT` | `SCHOOL` | `SCHOOL` | `SCHOOL` | `SCHOOL` | `SCHOOL` | `ASSIGNED` | `HOMEROOM` | `SCHOOL/TENANT` | `SCHOOL/TENANT` | `SELF` | `WARD` |
+| **`tenant:profile`** | ALL | ALL | Read | — | — | — | — | — | — | — | — | — | — | — |
+| **`tenant:school`** | ALL | ALL | Read | — | — | — | — | — | — | — | — | — | — | — |
+| **`tenant:audit`** | ALL | ALL | Read | — | — | — | — | — | — | — | — | — | — | — |
+| **`school:profile`** | ALL | ALL | Read | ALL | Read | Read | Read | Read | Read | Read | Read | Read | Read | Read |
+| **`school:settings`** | ALL | ALL | Read | ALL | Read | — | — | — | — | — | — | — | — | — |
+| **`school:user`** | ALL | ALL | Read | ALL | Read | — | — | — | — | — | — | — | — | — |
+| **`school:audit`** | ALL | ALL | Read | ALL | Read | — | — | — | — | — | — | — | — | — |
+| **`academic:year`** | ALL | Read | Read | ALL | ALL | ALL | Read | Read | Read | Read | Read | Read | Read | Read |
+| **`academic:term`** | ALL | Read | Read | ALL | ALL | ALL | Read | Read | Read | Read | Read | Read | Read | Read |
+| **`academic:curriculum`**| ALL | Read | Read | ALL | Read | ALL | — | Read | Read | Read | — | — | — | — |
+| **`academic:course`** | ALL | Read | Read | ALL | Read | ALL | — | Read | Read | Read | — | — | — | — |
+| **`academic:class`** | ALL | Read | Read | ALL | Read | ALL | Read | ALL | Read | Read | — | — | Scoped | Scoped |
+| **`academic:promotion`**| ALL | — | — | ALL | Approve | ALL | Read | Manage | — | Input | — | — | — | — |
+| **`student:profile`** | ALL | Read | Read | ALL | Read | Read | ALL | ALL | Scoped | Homeroom | Read | — | Self | Ward |
+| **`student:admission`**| ALL | Read | Read | ALL | Read | — | ALL | ALL | — | — | Read | — | — | — |
+| **`student:enrollment`**| ALL | Read | Read | ALL | Read | Manage | ALL | ALL | — | — | — | — | — | — |
+| **`student:guardian`** | ALL | Read | Read | ALL | Read | — | Manage | ALL | — | Homeroom | Read | — | Self | Ward |
+| **`student:document`** | ALL | Read | — | ALL | Read | — | ALL | ALL | — | Homeroom | — | — | Self | Ward |
+| **`student:conduct`** | ALL | Read | Read | ALL | Read | Read | ALL | Read | Input | Homeroom | — | — | Self | Ward |
+| **`attendance:student`**| ALL | Read | Read | ALL | Read | Read | ALL | Manage | Assigned | Homeroom | — | — | Self | Ward |
+| **`attendance:staff`** | ALL | Read | Read | ALL | ALL | Read | Read | Read | Self | Self | — | ALL | — | — |
+| **`timetable:schedule`**| ALL | Read | Read | ALL | Read | ALL | Read | Read | Assigned | Homeroom | — | — | Self | Ward |
+| **`timetable:calendar`**| ALL | Read | Read | ALL | ALL | ALL | ALL | Read | Read | Read | Read | Read | Read | Read |
+| **`exam:schedule`** | ALL | Read | Read | ALL | Read | ALL | Read | Read | Read | Read | — | — | Self | Ward |
+| **`exam:grade`** | ALL | Read | Read | ALL | Read | Read | — | Read | Assigned | Homeroom | — | — | Self | Ward |
+| **`exam:report-card`** | ALL | Read | Read | ALL | Lock | Review | Read | Generate | Input | Generate | — | — | Self | Ward |
+| **`finance:fee`** | ALL | Read | Read | ALL | Read | — | — | Read | — | — | ALL | — | Read | Read |
+| **`finance:invoice`** | ALL | Read | Read | ALL | Read | — | — | — | — | — | ALL | — | Self | Ward |
+| **`finance:payment`** | ALL | Read | Read | ALL | Read | — | — | — | — | — | ALL | — | Self | Ward |
+| **`finance:report`** | ALL | ALL | ALL | ALL | Read | — | — | — | — | — | ALL | — | — | — |
+| **`hr:staff`** | ALL | Read | Read | ALL | Read | Read | Read | Read | Self | Self | — | ALL | — | — |
+| **`hr:assignment`** | ALL | Read | Read | ALL | Read | ALL | — | Read | Read | Read | — | ALL | — | — |
+| **`hr:leave`** | ALL | — | — | ALL | Approve | — | — | — | Request | Request | Request | ALL | — | — |
+| **`hr:payroll`** | ALL | Read | Read | ALL | Read | — | — | — | Self | Self | Read | ALL | — | — |
+| **`audit:log`** | ALL | ALL | Read | ALL | Read | — | — | — | — | — | — | — | — | — |
 
 ---
 
 ## 5. Security & Technical Implementation Guide
 
-### 5.1 Enforcing Permissions in Adapters
+### 5.1 Enforcing Tenant Isolation vs. School Scoping
 
-Inbound driving adapters (REST controllers) secure business use-case execution using the `ed-iam` annotation `@RequirePermission`:
+Ilmiya utilizes a two-tier context evaluation:
+1. **Tier 1 (Tenant Boundary)**: Evaluated at the HTTP filter and database query level via `TenantContext` (`ScopedValue<TenantId>`). The database automatically appends `tenant_id = :currentTenantId` to prevent cross-foundation leakage.
+2. **Tier 2 (School Scope)**: Evaluated at the application use-case level. Requests carrying school-specific operations identify the target unit via path parameter (e.g. `/api/v1/schools/{schoolId}/...`) or header `X-School-ID`.
 
-```kotlin
-@RestController
-@RequestMapping("/api/v1/academic-years")
-class AcademicYearController(
-    private val createAcademicYearUseCase: CreateAcademicYearUseCase,
-    private val getAcademicYearUseCase: GetAcademicYearUseCase
-) {
-
-    @GetMapping
-    @RequirePermission(IlmiyaPermissions.ACADEMIC_YEAR_READ)
-    fun listAcademicYears(): ApiResponse<List<AcademicYearResponse>> {
-        // ...
-    }
-
-    @PostMapping
-    @RequirePermission(IlmiyaPermissions.ACADEMIC_YEAR_WRITE)
-    fun createAcademicYear(@Valid @RequestBody request: CreateAcademicYearRequest): ApiResponse<AcademicYearResponse> {
-        // ...
-    }
-}
+```
+Incoming Request
+      │
+      ▼
+┌─────────────────────────────────┐
+│       TenantContextFilter       │───► Binds X-Tenant-ID to TenantContext (ScopedValue)
+└───────────────┬─────────────────┘
+                ▼
+┌─────────────────────────────────┐
+│     JwtAuthenticationFilter     │───► Validates Bearer Token & User Permissions
+└───────────────┬─────────────────┘
+                ▼
+┌─────────────────────────────────┐
+│       @RequirePermission        │───► Validates coarse permission (e.g. academic:year:write)
+└───────────────┬─────────────────┘
+                ▼
+┌─────────────────────────────────┐
+│ Use Case (Domain Authorization) │───► Validates School Scope & Data Ownership
+└─────────────────────────────────┘
 ```
 
 ### 5.2 Dynamic Data Ownership Enforcement
@@ -421,16 +491,26 @@ While method-level security verifies the user holds the coarse-grained permissio
 ```kotlin
 @Service
 class RecordExamGradeService(
+    private val schoolRepository: SchoolRepository,
     private val timetablePort: TimetableQueryPort,
     private val examGradeRepository: ExamGradeRepository
 ) : RecordExamGradeUseCase {
 
     override fun recordGrade(command: RecordExamGradeCommand) {
         val currentActor = SecurityContextHolder.getActor()
-        
-        // Ensure teacher is assigned to this specific course and class batch
-        if (!currentActor.hasGlobalRole(Role.SCHOOL_ADMIN)) {
+        val tenantId = TenantContext.current()
+
+        // 1. Verify the school belongs to the active tenant
+        val school = schoolRepository.findById(SchoolId.of(command.schoolId))
+            ?: throw ResourceNotFoundException("School", command.schoolId)
+        if (school.tenantId != tenantId) {
+            throw AccessDeniedException("School does not belong to the current tenant.")
+        }
+
+        // 2. If actor is a teacher, verify they are assigned to this specific batch and course
+        if (!currentActor.hasRole(Role.SCHOOL_ADMIN) && !currentActor.hasRole(Role.TENANT_ADMIN)) {
             val isAssigned = timetablePort.isTeacherAssignedToBatch(
+                schoolId = school.id,
                 teacherId = currentActor.id,
                 batchId = command.classBatchId,
                 courseId = command.courseId
@@ -439,20 +519,17 @@ class RecordExamGradeService(
                 throw AccessDeniedException("Teacher is not allocated to teach this class batch.")
             }
         }
-        
-        // Execute grade recording...
+
+        // 3. Execute grade recording...
     }
 }
 ```
 
-### 5.3 Wildcard Matching & Role Templates
+### 5.3 Cross-School Parent Experience
 
-The `ed-iam` permission evaluation engine natively resolves hierarchical wildcards. For example:
-- A user with permission `academic:*` automatically matches:
-  - `academic:year:read`
-  - `academic:year:write`
-  - `academic:class:write`
-  - `academic:promotion:manage`
-- A user with `student:profile:*` matches both `student:profile:read` and `student:profile:write`.
-
-Tenants can customize permissions per role, but Ilmiya pre-configures standard role templates out-of-the-box upon tenant registration.
+In multi-school foundations, a parent user account is created at the **Tenant Level**:
+- When authenticated, the parent JWT contains their tenant ID and linked child IDs (`wards`).
+- In the Parent Portal UI, the parent can select which child to view.
+- When viewing Child A (in Elementary School `sch-sd-01`), the portal queries `sch-sd-01` APIs.
+- When viewing Child B (in Junior High `sch-smp-01`), the portal queries `sch-smp-01` APIs under the same parent login credentials.
+- Invoicing and payment reconciliation aggregate under the parent identity while maintaining correct school-unit ledger bookkeeping.
