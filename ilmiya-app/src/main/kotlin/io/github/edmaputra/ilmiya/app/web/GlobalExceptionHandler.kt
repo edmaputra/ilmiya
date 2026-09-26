@@ -8,7 +8,9 @@ import io.github.edmaputra.ilmiya.common.exception.DomainException
 import io.github.edmaputra.ilmiya.common.exception.MissingTenantContextException
 import io.github.edmaputra.ilmiya.common.exception.ResourceNotFoundException
 import io.github.edmaputra.ilmiya.core.school.domain.exception.DuplicateInstitutionCodeException
+import io.github.edmaputra.ilmiya.core.school.domain.exception.DuplicateTenantException
 import io.github.edmaputra.ilmiya.core.school.domain.exception.SchoolNotFoundException
+import io.github.edmaputra.ilmiya.core.school.domain.exception.TenantNotFoundException
 import jakarta.servlet.http.HttpServletRequest
 import org.slf4j.LoggerFactory
 import org.springframework.http.HttpStatus
@@ -47,6 +49,7 @@ class GlobalExceptionHandler {
 
     @ExceptionHandler(
         SchoolNotFoundException::class,
+        TenantNotFoundException::class,
         AcademicYearNotFoundException::class,
         AcademicTermNotFoundException::class,
         ResourceNotFoundException::class
@@ -65,6 +68,7 @@ class GlobalExceptionHandler {
 
     @ExceptionHandler(
         DuplicateInstitutionCodeException::class,
+        DuplicateTenantException::class,
         DuplicateAcademicYearException::class
     )
     fun handleDuplicateResource(ex: DomainException, request: HttpServletRequest): ProblemDetail {

@@ -59,4 +59,27 @@ interface SchoolRepository {
      * @return true if exists, false otherwise
      */
     fun existsByTenantId(tenantId: TenantId): Boolean
+
+    /**
+     * Retrieves a paginated list of schools.
+     *
+     * @param page zero-based page index
+     * @param size page size
+     * @return list of schools for the specified page
+     */
+    fun findAll(page: Int, size: Int): List<School>
+
+    /**
+     * Counts the total number of registered schools.
+     *
+     * @return total count of schools
+     */
+    fun count(): Long
+
+    /**
+     * Deletes a school by its tenant identifier.
+     *
+     * @param tenantId tenant identifier
+     */
+    fun deleteByTenantId(tenantId: TenantId)
 }
