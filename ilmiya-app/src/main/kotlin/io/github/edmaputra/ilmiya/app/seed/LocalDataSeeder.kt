@@ -24,6 +24,7 @@ import io.github.edmaputra.ilmiya.core.school.domain.port.`in`.RegisterSchoolCom
 import io.github.edmaputra.ilmiya.core.school.domain.port.`in`.RegisterSchoolUseCase
 import io.github.edmaputra.ilmiya.core.school.domain.port.out.SchoolRepository
 import io.github.edmaputra.ilmiya.core.security.IlmiyaPermissions
+import io.github.edmaputra.ilmiya.core.security.IlmiyaRoles
 import org.slf4j.LoggerFactory
 import org.springframework.boot.ApplicationArguments
 import org.springframework.boot.ApplicationRunner
@@ -207,18 +208,18 @@ class LocalDataSeeder(
 
         // 1. Seed School Admin Role and User
         if (!userRepository.existsByEmail(ADMIN_EMAIL)) {
-            val role = if (!roleRepository.existsByTenantIdAndCode(iamTenantId, "SCHOOL_ADMIN")) {
+            val role = if (!roleRepository.existsByTenantIdAndCode(iamTenantId, IlmiyaRoles.SCHOOL_ADMIN)) {
                 manageRoleUseCase.createRole(
                     RoleCommands.CreateRoleCommand(
                         iamTenantId,
-                        "SCHOOL_ADMIN",
+                        IlmiyaRoles.SCHOOL_ADMIN,
                         "School Administrator",
                         "Full administrative access for the school tenant",
                         schoolAdminPermissions
                     )
                 )
             } else {
-                roleRepository.findByTenantIdAndCode(iamTenantId, "SCHOOL_ADMIN").orElseThrow()
+                roleRepository.findByTenantIdAndCode(iamTenantId, IlmiyaRoles.SCHOOL_ADMIN).orElseThrow()
             }
 
             val adminUser = manageUserUseCase.createUser(

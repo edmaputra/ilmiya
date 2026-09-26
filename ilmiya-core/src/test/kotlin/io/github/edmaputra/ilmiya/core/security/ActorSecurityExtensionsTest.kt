@@ -27,7 +27,7 @@ class ActorSecurityExtensionsTest {
         override fun isPlatformSuperAdmin(): Boolean = false
         override fun isTenantWide(): Boolean = false
         override fun groups(): Set<String> = emptySet()
-        override fun roles(): Set<String> = emptySet()
+        override fun roles(): Set<String> = setOf(IlmiyaRoles.TEACHER, IlmiyaRoles.HOMEROOM_TEACHER)
         override fun permissions(): Set<String> = setOf(IlmiyaPermissions.STUDENT_PROFILE_READ, IlmiyaPermissions.ATTENDANCE_READ)
         override fun accessibleScopeNodeIds(): Set<UUID> = setOf(targetScope)
     }
@@ -62,6 +62,29 @@ class ActorSecurityExtensionsTest {
         assertThatThrownBy {
             actor.requireAllPermissions(IlmiyaPermissions.STUDENT_PROFILE_READ, "MISSING_PERM")
         }.isInstanceOf(AccessDeniedException::class.java)
+    }
+
+    @Test
+    fun `hasRole and requireRole should correctly assert actor roles`() {
+        assertThat(actor.hasRole(IlmiyaRoles.TEACHER)).isTrue()
+        assertThat(actor.hasRole(IlmiyaRoles.PRINCIPAL)).isFalse()
+
+        assertThatCode { actor.requireRole(IlmiyaRoles.TEACHER) }.doesNotThrowAnyException()
+        assertThatThrownBy { actor.requireRole(IlmiyaRoles.PRINCIPAL) }
+            .isInstanceOf(AccessDeniedException::class.java)
+            .hasMessageContaining(IlmiyaRoles.PRINCIPAL)
+    }
+
+    @Test
+    fun `requireAnyRole should succeed when at least one matches and throw otherwise`() {
+        assertThatCode {
+            actor.requireAnyRole(IlmiyaRoles.TEACHER, IlmiyaRoles.PRINCIPAL)
+        }.doesNotThrowAnyException()
+
+        assertThatThrownBy {
+            actor.requireAnyRole(IlmiyaRoles.PRINCIPAL, IlmiyaRoles.BURSAR)
+        }.isInstanceOf(AccessDeniedException::class.java)
+            .hasMessageContaining("any of required roles")
     }
 
     @Test
