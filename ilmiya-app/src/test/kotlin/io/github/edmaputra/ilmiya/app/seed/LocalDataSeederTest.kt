@@ -30,6 +30,7 @@ import io.github.edmaputra.ilmiya.core.school.domain.SchoolId
 import io.github.edmaputra.ilmiya.core.school.domain.port.`in`.RegisterSchoolCommand
 import io.github.edmaputra.ilmiya.core.school.domain.port.`in`.RegisterSchoolUseCase
 import io.github.edmaputra.ilmiya.core.school.domain.port.out.SchoolRepository
+import io.github.edmaputra.ilmiya.core.security.IlmiyaRoles
 import io.mockk.every
 import io.mockk.mockk
 import io.mockk.verify
@@ -130,12 +131,12 @@ class LocalDataSeederTest {
         // Arrange - IAM
         every { userRepository.existsByEmail(LocalDataSeeder.ADMIN_EMAIL) } returns false
         every { userRepository.existsByEmail(LocalDataSeeder.SUPERADMIN_EMAIL) } returns false
-        every { roleRepository.existsByTenantIdAndCode(sampleIamTenantId, "SCHOOL_ADMIN") } returns false
+        every { roleRepository.existsByTenantIdAndCode(sampleIamTenantId, IlmiyaRoles.SCHOOL_ADMIN) } returns false
 
         val sampleRole = Role(
             RoleId.generate(),
             sampleIamTenantId,
-            "SCHOOL_ADMIN",
+            IlmiyaRoles.SCHOOL_ADMIN,
             "School Administrator",
             "Full administrative access for the school tenant",
             false,
@@ -181,7 +182,7 @@ class LocalDataSeederTest {
         verify(exactly = 1) { activateAcademicYearUseCase.activate(sampleTenantId, sampleAcademicYear.id) }
         verify(exactly = 2) { addAcademicTermUseCase.addTerm(sampleTenantId, sampleAcademicYear.id, any()) }
         verify(exactly = 1) { activateAcademicTermUseCase.activateTerm(sampleTenantId, sampleAcademicYear.id, sampleTerm1.id) }
-        verify(exactly = 1) { manageRoleUseCase.createRole(match { it.code == "SCHOOL_ADMIN" }) }
+        verify(exactly = 1) { manageRoleUseCase.createRole(match { it.code == IlmiyaRoles.SCHOOL_ADMIN }) }
         verify(exactly = 1) { manageUserUseCase.createUser(match { it.email == LocalDataSeeder.ADMIN_EMAIL }) }
         verify(exactly = 1) { manageUserUseCase.createUser(match { it.email == LocalDataSeeder.SUPERADMIN_EMAIL }) }
         verify(exactly = 1) { manageUserUseCase.assignRole(match { it.userId == sampleAdminUser.id && it.roleId == sampleRole.id }) }

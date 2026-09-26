@@ -49,6 +49,35 @@ fun CurrentActor.requireAllPermissions(vararg permissions: String) {
 }
 
 /**
+ * Checks whether the actor possesses the specified role.
+ * Platform superadministrators possess all roles implicitly.
+ */
+fun CurrentActor.hasRole(roleCode: String): Boolean =
+    isPlatformSuperAdmin || roles().contains(roleCode)
+
+/**
+ * Asserts that the actor possesses the specified role.
+ * Throws [AccessDeniedException] if missing.
+ */
+fun CurrentActor.requireRole(roleCode: String) {
+    if (!hasRole(roleCode)) {
+        throw AccessDeniedException("Access denied: Actor lacks required role '$roleCode'")
+    }
+}
+
+/**
+ * Asserts that the actor possesses at least one of the specified roles.
+ * Throws [AccessDeniedException] if none match.
+ */
+fun CurrentActor.requireAnyRole(vararg roleCodes: String) {
+    if (isPlatformSuperAdmin) return
+    val matched = roleCodes.any { roles().contains(it) }
+    if (!matched) {
+        throw AccessDeniedException("Access denied: Actor lacks any of required roles: ${roleCodes.joinToString()}")
+    }
+}
+
+/**
  * Asserts that the target scope node is within the actor's authorized scope subtree.
  * Throws [AccessDeniedException] if outside boundary.
  */

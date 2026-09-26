@@ -9,7 +9,8 @@
 **Ilmiya** is designed to streamline school governance, academic operations, student lifecycle tracking, attendance, examinations, fee management, and human resources for educational institutions (primary, secondary, vocational, and Islamic boarding schools / pesantren).
 
 For the full product vision, target market segments, and roadmap breakdown, see:
-📖 **[Features and Roadmap](docs/01-features-and-roadmap.md)**
+- 📖 **[Features and Roadmap](docs/01-features-and-roadmap.md)**
+- 🔐 **[Roles and Permissions Specification](docs/02-roles-and-permissions.md)**
 
 ---
 
@@ -82,6 +83,7 @@ Once running, access Swagger UI at:
 ## Documentation & Standards
 
 - [Features and Roadmap](docs/01-features-and-roadmap.md)
+- [Roles and Permissions Specification](docs/02-roles-and-permissions.md)
 - [How-To Guides (Operational Runbooks)](docs/how-to/README.md)
 - [Agent Guide (AGENTS.md)](AGENTS.md)
 - [Clean Code Standards](.agents/rules/java-kotlin/clean-code.md)

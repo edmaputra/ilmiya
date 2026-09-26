@@ -87,7 +87,7 @@ class SchoolController(
      * Updates the school institutional profile for the current tenant.
      */
     @PutMapping("/profile")
-    @RequirePermission(IlmiyaPermissions.SCHOOL_PROFILE_WRITE)
+    @RequirePermission(IlmiyaPermissions.SCHOOL_PROFILE_UPDATE)
     fun updateProfile(
         @Valid @RequestBody request: UpdateSchoolRequest
     ): ResponseEntity<SchoolResponse> {
