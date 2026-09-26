@@ -2,10 +2,12 @@ package io.github.edmaputra.ilmiya.app.school
 
 import com.ninjasquad.springmockk.MockkBean
 import io.github.edmaputra.ilmiya.common.domain.TenantId
+import io.github.edmaputra.ilmiya.common.dto.PageResponse
 import io.github.edmaputra.ilmiya.core.school.adapter.web.SchoolController
 import io.github.edmaputra.ilmiya.core.school.domain.School
 import io.github.edmaputra.ilmiya.core.school.domain.port.`in`.ConfigureSchoolSettingsUseCase
 import io.github.edmaputra.ilmiya.core.school.domain.port.`in`.GetSchoolProfileUseCase
+import io.github.edmaputra.ilmiya.core.school.domain.port.`in`.ListTenantsUseCase
 import io.github.edmaputra.ilmiya.core.school.domain.port.`in`.RegisterSchoolUseCase
 import io.github.edmaputra.ilmiya.core.school.domain.port.`in`.UpdateSchoolProfileUseCase
 import io.mockk.every
@@ -44,6 +46,34 @@ class SchoolControllerTest {
 
     @MockkBean
     private lateinit var configureSchoolSettingsUseCase: ConfigureSchoolSettingsUseCase
+
+    @MockkBean
+    private lateinit var listTenantsUseCase: ListTenantsUseCase
+
+    @Test
+    fun `should list schools with default pagination`() {
+        val school = School.create(
+            tenantId = TenantId.of("tenant-sch-01"),
+            name = "International Islamic School",
+            institutionCode = "IIS-01",
+            address = "Jl. Pendidikan No. 1",
+            contactEmail = "admin@iis.edu",
+            contactPhone = "+628123456789"
+        )
+        val pageResponse = PageResponse.of(
+            content = listOf(school),
+            page = 0,
+            size = 20,
+            totalElements = 1L
+        )
+        every { listTenantsUseCase.listTenants(0, 20) } returns pageResponse
+
+        mockMvc.perform(get("/api/v1/schools"))
+            .andExpect(status().isOk)
+            .andExpect(jsonPath("$.content[0].name").value("International Islamic School"))
+            .andExpect(jsonPath("$.content[0].institutionCode").value("IIS-01"))
+            .andExpect(jsonPath("$.totalElements").value(1))
+    }
 
     @Test
     fun `should register a new school successfully`() {

@@ -80,7 +80,8 @@ data class School(
         logoUrl: String? = this.logoUrl,
         governmentRegistrationNumber: String? = this.governmentRegistrationNumber,
         registrationType: String? = this.registrationType,
-        accreditation: Accreditation = this.accreditation
+        accreditation: Accreditation = this.accreditation,
+        status: SchoolStatus = this.status
     ): School {
         val updated = copy(
             name = name,
@@ -91,6 +92,7 @@ data class School(
             governmentRegistrationNumber = governmentRegistrationNumber,
             registrationType = registrationType,
             accreditation = accreditation,
+            status = status,
             updatedAt = Instant.now()
         )
         updated.registerEvent(

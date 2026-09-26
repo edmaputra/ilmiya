@@ -87,7 +87,49 @@ Content-Type: application/json
 
 ---
 
-## Step 3: Verify Persistence in the Database
+## Step 3: Manage Tenants via Secured CRUD API
+
+Authorized administrators can perform full lifecycle CRUD management on tenants via `/api/v1/tenants` secured with fine-grained permissions:
+
+| Operation | Endpoint | Required Permission | Description |
+|---|---|---|---|
+| **Create** | `POST /api/v1/tenants` | `tenant:management:create` | Provision a new tenant and institutional boundary |
+| **List** | `GET /api/v1/tenants` | `tenant:management:read` | Paginated listing of all platform tenants |
+| **Get** | `GET /api/v1/tenants/{tenantId}` | `tenant:management:read` | Retrieve tenant details by identifier |
+| **Update** | `PUT /api/v1/tenants/{tenantId}` | `tenant:management:update` | Update tenant details and lifecycle status |
+| **Delete** | `DELETE /api/v1/tenants/{tenantId}` | `tenant:management:delete` | Delete a tenant boundary |
+
+*(Note: For unauthenticated client portals and self-registration screens, `GET /api/v1/schools` is publicly accessible without credentials).*
+
+### Example: Retrieve Single Tenant
+```bash
+curl -s -X GET http://localhost:8080/api/v1/tenants/sma-nusantara-1 \
+  -H "Authorization: Bearer <JWT_ACCESS_TOKEN>" | jq
+```
+
+### Example: Update Tenant Status
+```bash
+curl -i -X PUT http://localhost:8080/api/v1/tenants/sma-nusantara-1 \
+  -H "Authorization: Bearer <JWT_ACCESS_TOKEN>" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "name": "SMA Nusantara 1 Jakarta",
+    "address": "Jl. Merdeka No. 45, Jakarta",
+    "contactEmail": "info@smanusantara1.sch.id",
+    "contactPhone": "+62-21-5550199",
+    "status": "ACTIVE"
+  }'
+```
+
+### Example: Delete Tenant
+```bash
+curl -i -X DELETE http://localhost:8080/api/v1/tenants/sma-nusantara-1 \
+  -H "Authorization: Bearer <JWT_ACCESS_TOKEN>"
+```
+
+---
+
+## Step 4: Verify Persistence in the Database
 
 Connect to the PostgreSQL instance and verify the record in `core_schools`:
 
@@ -107,7 +149,7 @@ WHERE tenant_id = 'sma-nusantara-1';
 
 ---
 
-## Step 4: Retrieve the Institutional Profile
+## Step 5: Retrieve the Institutional Profile
 
 Secured endpoints require both an authenticated session and the tenant context header `X-Tenant-ID`. The profile endpoint resolves the school associated with the active tenant.
 
@@ -122,7 +164,7 @@ curl -s -X GET http://localhost:8080/api/v1/schools/profile \
 
 ---
 
-## Step 5: Update School Profile Details
+## Step 6: Update School Profile Details
 
 Institutional administrators can update contact details, address, logo, and accreditation via `PUT /api/v1/schools/profile`:
 
@@ -150,7 +192,7 @@ Returns the updated `SchoolResponse` payload with an incremented `version` and n
 
 ---
 
-## Step 6: Verify Multi-Tenant Isolation
+## Step 7: Verify Multi-Tenant Isolation
 
 To verify strict tenant isolation:
 1. Make a request with a non-existent or different tenant header:
