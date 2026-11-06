@@ -29,6 +29,14 @@ iam:
     secret: ${IAM_JWT_SECRET:super-secret-jwt-signing-key-for-ilmiya-school-platform-which-must-be-at-least-256-bits!}
     access-token-expiration-seconds: ${IAM_JWT_ACCESS_TOKEN_EXPIRATION:3600}
     refresh-token-expiration-seconds: ${IAM_JWT_REFRESH_TOKEN_EXPIRATION:604800}
+  auth:
+    magic-link:
+      enabled: ${IAM_MAGIC_LINK_ENABLED:true}
+      expiration-seconds: ${IAM_MAGIC_LINK_EXPIRATION:900}
+      base-url: ${ILMIYA_APP_BASE_URL:http://localhost:8080}
+      allowed-redirect-hosts:
+        - localhost
+        - 127.0.0.1
   security:
     session:
       max-concurrent-sessions: ${IAM_SESSION_MAX_CONCURRENT:3}
@@ -43,6 +51,10 @@ ed-iam:
   security:
     filter:
       register-servlet: false
+  auth:
+    magic-link:
+      endpoints:
+        enabled: ${ED_IAM_MAGIC_LINK_ENDPOINTS_ENABLED:true}
 
 server:
   port: ${SERVER_PORT:8080}

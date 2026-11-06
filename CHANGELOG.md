@@ -20,6 +20,7 @@ and this project adheres to [Semantic Versioning (v2.0.0)](https://semver.org/sp
   - RFC 9457 `ProblemDetail` security exception mapping in `IlmiyaSecurityExceptionHandler`.
   - Comprehensive `IlmiyaPermissionCatalog` registry and idempotent `PermissionCatalogSeeder` populating all domain entitlements and wildcards into the ed-iam catalog.
   - Active session management, concurrency limits, and exam lockdown control via `ExamSessionLockdownService` and `ExamSessionController` (`/api/v1/exam-sessions`).
+  - Passwordless Magic Link authentication for students, parents, and school staff via `IlmiyaMagicLinkNotifier` and decoupled `MagicLinkDispatchedEvent` publishing.
 - Hexagonal architecture boundary enforcement with ArchUnit test suite.
 
 ### Changed
