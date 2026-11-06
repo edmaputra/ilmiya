@@ -18,12 +18,14 @@ and this project adheres to [Semantic Versioning (v2.0.0)](https://semver.org/sp
   - Role-based and permission-based access control annotations (`@RequirePermission`).
   - Scoped value actor propagation and MDC tenant correlation via `IlmiyaTenantContextBridge`.
   - RFC 9457 `ProblemDetail` security exception mapping in `IlmiyaSecurityExceptionHandler`.
+  - Comprehensive `IlmiyaPermissionCatalog` registry and idempotent `PermissionCatalogSeeder` populating all domain entitlements and wildcards into the ed-iam catalog.
+  - Active session management, concurrency limits, and exam lockdown control via `ExamSessionLockdownService` and `ExamSessionController` (`/api/v1/exam-sessions`).
 - Hexagonal architecture boundary enforcement with ArchUnit test suite.
 
 ### Changed
 - Updated `ed-agent-standards` submodule to latest commit with multi-stack structure (`rules/java-kotlin/`, `rules/shared/`) and automated structure scanner.
 - Updated `README.md` documentation links reflecting the stack-based rule structure.
-- Upgraded `ed-iam` starter library to `0.3.0`, integrating its decoupled modular structure (`ed-iam-auth` extraction for authentication and token issuance, `SecurityContextCurrentActor` relocation to `ed-iam-resource-server`, centralized `TenantResolutionHelper` in `ed-iam-core`, and user pagination/filtering support).
+- Upgraded `ed-iam` starter library to `0.13.0`, introducing Refresh Token Rotation (RTR), session management and token revocation blacklisting, timing side-channel and anti-enumeration defenses, passwordless magic links, TOTP MFA challenge endpoints, permission catalog support, and dedicated `ed-iam.security.filter` configuration preventing duplicate servlet filter execution.
 - Migrated codebase to idiomatic Kotlin targeting Java 25 and Spring Boot 4.1.1.
 - REST endpoints now return direct domain DTOs without wrapper envelopes, aligning with API conventions.
 - Global exception handling refactored to emit RFC 9457 `ProblemDetail` payloads.

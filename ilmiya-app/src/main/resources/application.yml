@@ -29,9 +29,20 @@ iam:
     secret: ${IAM_JWT_SECRET:super-secret-jwt-signing-key-for-ilmiya-school-platform-which-must-be-at-least-256-bits!}
     access-token-expiration-seconds: ${IAM_JWT_ACCESS_TOKEN_EXPIRATION:3600}
     refresh-token-expiration-seconds: ${IAM_JWT_REFRESH_TOKEN_EXPIRATION:604800}
+  security:
+    session:
+      max-concurrent-sessions: ${IAM_SESSION_MAX_CONCURRENT:3}
+      session-limit-strategy: ${IAM_SESSION_LIMIT_STRATEGY:TERMINATE_OLDEST}
+      max-failed-login-attempts: ${IAM_SESSION_MAX_FAILED_ATTEMPTS:5}
+      lockout-duration-seconds: ${IAM_SESSION_LOCKOUT_DURATION:900}
   management:
     endpoints:
       enabled: ${IAM_MANAGEMENT_ENDPOINTS_ENABLED:true}
+
+ed-iam:
+  security:
+    filter:
+      register-servlet: false
 
 server:
   port: ${SERVER_PORT:8080}
