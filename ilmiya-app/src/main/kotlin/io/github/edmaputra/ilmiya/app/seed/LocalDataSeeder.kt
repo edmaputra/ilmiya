@@ -23,6 +23,7 @@ import io.github.edmaputra.ilmiya.core.school.domain.TermLayout
 import io.github.edmaputra.ilmiya.core.school.domain.port.`in`.RegisterSchoolCommand
 import io.github.edmaputra.ilmiya.core.school.domain.port.`in`.RegisterSchoolUseCase
 import io.github.edmaputra.ilmiya.core.school.domain.port.out.SchoolRepository
+import io.github.edmaputra.ilmiya.core.security.IlmiyaPermissionCatalog
 import io.github.edmaputra.ilmiya.core.security.IlmiyaPermissions
 import io.github.edmaputra.ilmiya.core.security.IlmiyaRoles
 import org.slf4j.LoggerFactory
@@ -159,53 +160,7 @@ class LocalDataSeeder(
     private fun seedIamData(iamTenantId: IamTenantId) {
         log.info("Checking local IAM seed data...")
 
-        val schoolAdminPermissions = setOf(
-            IlmiyaPermissions.SCHOOL_REGISTER,
-            IlmiyaPermissions.SCHOOL_PROFILE_READ,
-            IlmiyaPermissions.SCHOOL_PROFILE_WRITE,
-            IlmiyaPermissions.SCHOOL_SETTINGS_MANAGE,
-            IlmiyaPermissions.ACADEMIC_YEAR_READ,
-            IlmiyaPermissions.ACADEMIC_YEAR_WRITE,
-            IlmiyaPermissions.CURRICULUM_READ,
-            IlmiyaPermissions.CURRICULUM_MANAGE,
-            IlmiyaPermissions.COURSE_READ,
-            IlmiyaPermissions.COURSE_WRITE,
-            IlmiyaPermissions.STUDENT_PROFILE_READ,
-            IlmiyaPermissions.STUDENT_PROFILE_WRITE,
-            IlmiyaPermissions.STUDENT_ENROLLMENT_MANAGE,
-            IlmiyaPermissions.GUARDIAN_LINK_MANAGE,
-            IlmiyaPermissions.ATTENDANCE_READ,
-            IlmiyaPermissions.ATTENDANCE_RECORD,
-            IlmiyaPermissions.ATTENDANCE_MODIFY,
-            IlmiyaPermissions.ATTENDANCE_APPROVE,
-            IlmiyaPermissions.STAFF_PROFILE_READ,
-            IlmiyaPermissions.STAFF_PROFILE_WRITE,
-            IlmiyaPermissions.TEACHER_ASSIGNMENT_MANAGE,
-            IlmiyaPermissions.TIMETABLE_READ,
-            IlmiyaPermissions.TIMETABLE_MANAGE,
-            IlmiyaPermissions.EXAM_SCHEDULE_READ,
-            IlmiyaPermissions.EXAM_SCHEDULE_MANAGE,
-            IlmiyaPermissions.GRADE_ENTRY,
-            IlmiyaPermissions.GRADE_MODIFY,
-            IlmiyaPermissions.REPORT_CARD_PUBLISH,
-            IlmiyaPermissions.FEE_STRUCTURE_MANAGE,
-            IlmiyaPermissions.INVOICE_CREATE,
-            IlmiyaPermissions.PAYMENT_RECORD,
-            IlmiyaPermissions.FINANCIAL_REPORT_READ,
-            IlmiyaPermissions.TENANT_READ,
-            IlmiyaPermissions.TENANT_CREATE,
-            IlmiyaPermissions.TENANT_UPDATE,
-            IlmiyaPermissions.TENANT_DELETE,
-            "school:*",
-            "academic:*",
-            "student:*",
-            "attendance:*",
-            "hr:*",
-            "timetable:*",
-            "exam:*",
-            "finance:*",
-            "tenant:*"
-        )
+        val schoolAdminPermissions = IlmiyaPermissionCatalog.ENTRIES.map { it.code }.toSet()
 
         // 1. Seed School Admin Role and User
         if (!userRepository.existsByEmail(ADMIN_EMAIL)) {
