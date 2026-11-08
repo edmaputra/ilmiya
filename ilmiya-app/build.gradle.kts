@@ -33,6 +33,11 @@ dependencies {
     // OpenAPI / Swagger Documentation
     implementation("org.springdoc:springdoc-openapi-starter-webmvc-ui:3.1.0")
 
+    // HashiCorp Vault & Consul Configuration & Discovery
+    implementation("org.springframework.cloud:spring-cloud-starter-vault-config")
+    implementation("org.springframework.cloud:spring-cloud-starter-consul-config")
+    implementation("org.springframework.cloud:spring-cloud-starter-consul-discovery")
+
     // Test dependencies
     testImplementation("org.springframework.boot:spring-boot-starter-webmvc-test")
     testImplementation("org.springframework.boot:spring-boot-testcontainers")

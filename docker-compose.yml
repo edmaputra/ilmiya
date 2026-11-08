@@ -1,6 +1,6 @@
 services:
   postgres:
-    image: postgres:17.8-alpine3.23
+    image: postgres:18.6-alpine3.24
     container_name: ilmiya-postgres
     restart: unless-stopped
     environment:
@@ -19,6 +19,77 @@ services:
     networks:
       - ilmiya-network
 
+  # HashiCorp Consul for distributed configuration and service discovery
+  consul:
+    image: hashicorp/consul:2.1.0
+    container_name: ilmiya-consul
+    restart: unless-stopped
+    command: agent -server -ui -node=server-1 -bootstrap-expect=1 -client=0.0.0.0
+    ports:
+      - "${CONSUL_PORT:-8500}:8500"
+      - "${CONSUL_DNS_PORT:-8600}:8600/udp"
+    healthcheck:
+      test: ["CMD", "consul", "members"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    networks:
+      - ilmiya-network
+
+  # HashiCorp Vault for secrets management
+  vault:
+    image: hashicorp/vault:2.2.1
+    container_name: ilmiya-vault
+    restart: unless-stopped
+    cap_add:
+      - IPC_LOCK
+    environment:
+      VAULT_DEV_ROOT_TOKEN_ID: ${VAULT_DEV_ROOT_TOKEN_ID:-root}
+      VAULT_DEV_LISTEN_ADDRESS: 0.0.0.0:8200
+    ports:
+      - "${VAULT_PORT:-8200}:8200"
+    healthcheck:
+      test: ["CMD", "vault", "status"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    networks:
+      - ilmiya-network
+
+  # Automated initializer for local Consul KV and Vault secrets
+  consul-vault-init:
+    image: curlimages/curl:8.23.0
+    container_name: ilmiya-consul-vault-init
+    restart: "no"
+    depends_on:
+      consul:
+        condition: service_healthy
+      vault:
+        condition: service_healthy
+    entrypoint: ["/bin/sh", "-c"]
+    command:
+      - |
+        echo "Initializing Vault secrets for ilmiya-backend..."
+        curl -s -f -X POST http://vault:8200/v1/secret/data/ilmiya-backend \
+          -H "X-Vault-Token: $${VAULT_DEV_ROOT_TOKEN_ID:-root}" \
+          -H "Content-Type: application/json" \
+          -d '{"data": {"spring.datasource.password": "'"$${POSTGRES_PASSWORD:-ilmiya_password}"'", "iam.jwt.secret": "'"$${IAM_JWT_SECRET:-super-secret-jwt-signing-key-for-ilmiya-school-platform-which-must-be-at-least-256-bits!}"'"}}'
+        echo "Vault secrets initialized successfully."
+
+        echo "Initializing Consul KV configuration for ilmiya-backend..."
+        curl -s -f -X PUT http://consul:8500/v1/kv/config/ilmiya-backend/data \
+          --data-binary 'logging:
+          level:
+            io.github.edmaputra.ilmiya: DEBUG
+        ilmiya:
+          seed:
+            enabled: true
+        '
+        echo "Consul KV configuration initialized successfully."
+        echo "Local Vault and Consul initialization completed."
+    networks:
+      - ilmiya-network
+
   # Application service (can be started alongside postgres or built independently)
   ilmiya-app:
     build:
@@ -29,11 +100,23 @@ services:
     depends_on:
       postgres:
         condition: service_healthy
+      consul:
+        condition: service_healthy
+      vault:
+        condition: service_healthy
+      consul-vault-init:
+        condition: service_completed_successfully
     environment:
       SPRING_PROFILES_ACTIVE: ${SPRING_PROFILES_ACTIVE:-local}
       SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/${POSTGRES_DB:-ilmiya_db}
       SPRING_DATASOURCE_USERNAME: ${POSTGRES_USER:-ilmiya_user}
       SPRING_DATASOURCE_PASSWORD: ${POSTGRES_PASSWORD:-ilmiya_password}
+      SPRING_CLOUD_CONSUL_ENABLED: ${SPRING_CLOUD_CONSUL_ENABLED:-true}
+      SPRING_CLOUD_CONSUL_HOST: consul
+      SPRING_CLOUD_CONSUL_PORT: 8500
+      SPRING_CLOUD_VAULT_ENABLED: ${SPRING_CLOUD_VAULT_ENABLED:-true}
+      SPRING_CLOUD_VAULT_URI: http://vault:8200
+      SPRING_CLOUD_VAULT_TOKEN: ${VAULT_DEV_ROOT_TOKEN_ID:-root}
       SERVER_PORT: 8080
     ports:
       - "8080:8080"
@@ -42,7 +125,7 @@ services:
 
   # Optional database management UI (run with: docker compose --profile tools up -d)
   pgadmin:
-    image: dpage/pgadmin4:latest
+    image: dpage/pgadmin4:9.19.0
     container_name: ilmiya-pgadmin
     restart: unless-stopped
     profiles:

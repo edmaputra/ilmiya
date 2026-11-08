@@ -1,12 +1,12 @@
 # Agent Guide: ilmiya
 
-Multi-tenant School Management System (SMS) and Educational ERP built with Kotlin 2.3, Spring Boot 4.1.1, and Java 25.
+Multi-tenant School Management System (SMS) and Educational ERP built with Kotlin 2.3, Spring Boot 4.1.2, and Java 25.
 
 ---
 
 ## Stack & Versions
 - **Language**: Kotlin 2.3 (2.3.21) / Java 25
-- **Framework**: Spring Boot 4.x (4.1.1)
+- **Framework**: Spring Boot 4.x (4.1.2)
 - **Persistence**: PostgreSQL with Flyway migrations and Spring Data JPA
 - **Build Tool**: Gradle (`./gradlew`)
 - **Standards**: Inherited from [`.agents/rules/java-kotlin/`](.agents/rules/java-kotlin/) and [`.agents/rules/shared/`](.agents/rules/shared/)

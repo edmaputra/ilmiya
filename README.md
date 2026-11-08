@@ -1,6 +1,6 @@
 # Ilmiya
 
-> Multi-tenant School Management System (SMS) and Educational ERP built with Kotlin 2.3, Spring Boot 4.1.1, and Java 25.
+> Multi-tenant School Management System (SMS) and Educational ERP built with Kotlin 2.3, Spring Boot 4.1.2, and Java 25.
 
 ---
 
@@ -17,7 +17,7 @@ For the full product vision, target market segments, and roadmap breakdown, see:
 ## Architecture & Technology Stack
 
 - **Language & Runtime**: Kotlin 2.3.21, Java 25 (with `ScopedValue` multi-tenancy context)
-- **Framework**: Spring Boot 4.1.1
+- **Framework**: Spring Boot 4.1.2
 - **Database & Persistence**: PostgreSQL with Flyway database migrations and Spring Data JPA
 - **API Documentation**: OpenAPI 3 with Swagger UI
 - **Architecture Pattern**: Hexagonal Architecture (Ports and Adapters) & Domain-Driven Design (DDD)
@@ -46,32 +46,63 @@ For the full product vision, target market segments, and roadmap breakdown, see:
 
 ### Prerequisites
 - JDK 25
-- Docker & Docker Compose (for PostgreSQL)
+- Docker & Docker Compose (for PostgreSQL, HashiCorp Consul, and HashiCorp Vault)
 
-### Start Infrastructure (PostgreSQL)
+### Infrastructure & Local Services
+
+By default, Ilmiya connects to **HashiCorp Vault** (for secrets) and **HashiCorp Consul** (for distributed KV configuration and service discovery) out of the box without requiring extra profile flags.
+
+| Workflow | Infrastructure Required | Spring Profile | Description |
+|---|---|---|---|
+| **Default / Hybrid** (Recommended) | PostgreSQL, Consul, Vault | _(default)_ or `local` | **Default behavior.** Uses Vault for secrets and Consul for configuration & service discovery without flags. |
+| **Full Containerized** | Entire stack in Docker | `local` | Runs PostgreSQL, Consul, Vault, initializers, and the Spring Boot application via Docker Compose. |
+| **Standalone Minimal** | PostgreSQL only | `local,standalone` | Optional fallback: disables Consul and Vault when running offline without external services. |
+
+#### 1. Start Infrastructure via Docker Compose
 ```bash
-# Start PostgreSQL database container
-docker compose up -d postgres
+# Recommended: Start database, Consul, and Vault (with automated secrets seeding)
+docker compose up -d postgres consul vault consul-vault-init
 
-# (Optional) Start with pgAdmin web UI at http://localhost:5050
+# (Optional) Launch with pgAdmin UI at http://localhost:5050
 docker compose --profile tools up -d
 ```
+
+> [!NOTE]
+> The `consul-vault-init` container automatically seeds the local Vault secrets (`secret/ilmiya-backend`) and Consul KV (`config/ilmiya-backend/data`). If you ever need to re-seed or update them manually, run `./scripts/init-vault-consul.sh`.
+
+#### 2. Service Management UIs
+- **Consul Web UI**: [http://localhost:8500/ui/](http://localhost:8500/ui/) (KV store and service discovery catalog)
+- **Vault Web UI**: [http://localhost:8200/ui/](http://localhost:8200/ui/) (Token: `root`)
+- **pgAdmin**: [http://localhost:5050](http://localhost:5050) (User: `admin@ilmiya.local`, Password: `admin`)
+
+---
 
 ### Build & Run Tests
 ```bash
 ./gradlew check
 ```
 
+---
+
 ### Run Application
 
-**Option A: Run with Gradle (Local Profile & Seed Data)**:
+**Option A: Default (Consul and Vault enabled out of the box)**:
 ```bash
+# Run with no arguments (uses default Vault and Consul config):
+./gradlew :ilmiya-app:bootRun
+
+# Or explicitly activate the local profile for local test data seeding:
 ./gradlew :ilmiya-app:bootRun --args='--spring.profiles.active=local'
 ```
 
-**Option B: Run Entire Stack via Docker Compose**:
+**Option B: Full Containerized Stack**:
 ```bash
 docker compose up -d --build
+```
+
+**Option C: Standalone Minimal (Bypass Vault and Consul)**:
+```bash
+./gradlew :ilmiya-app:bootRun --args='--spring.profiles.active=local,standalone'
 ```
 
 Once running, access Swagger UI at:
