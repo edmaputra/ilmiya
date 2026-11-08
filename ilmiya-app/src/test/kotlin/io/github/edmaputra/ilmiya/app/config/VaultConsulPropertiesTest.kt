@@ -35,4 +35,23 @@ class VaultConsulPropertiesTest {
                 assertThat(vaultEnabled).isFalse()
             }
     }
+
+    @Test
+    fun `should allow configuring k8s cluster endpoints via environment properties`() {
+        contextRunner
+            .withPropertyValues(
+                "spring.cloud.consul.host=consul-server",
+                "spring.cloud.vault.uri=http://vault:8200",
+                "spring.datasource.url=jdbc:postgresql://postgres:5432/ilmiya_db"
+            )
+            .run { context ->
+                val consulHost = context.environment.getProperty("spring.cloud.consul.host")
+                val vaultUri = context.environment.getProperty("spring.cloud.vault.uri")
+                val dbUrl = context.environment.getProperty("spring.datasource.url")
+
+                assertThat(consulHost).isEqualTo("consul-server")
+                assertThat(vaultUri).isEqualTo("http://vault:8200")
+                assertThat(dbUrl).isEqualTo("jdbc:postgresql://postgres:5432/ilmiya_db")
+            }
+    }
 }

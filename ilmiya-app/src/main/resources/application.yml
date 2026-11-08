@@ -130,4 +130,19 @@ spring:
     vault:
       enabled: true
 
+---
+spring:
+  config:
+    activate:
+      on-profile: k8s
+  datasource:
+    url: ${SPRING_DATASOURCE_URL:jdbc:postgresql://postgres:5432/ilmiya_db}
+  cloud:
+    consul:
+      host: ${SPRING_CLOUD_CONSUL_HOST:consul-server}
+      port: ${SPRING_CLOUD_CONSUL_PORT:8500}
+    vault:
+      uri: ${SPRING_CLOUD_VAULT_URI:http://vault:8200}
+
+
 
