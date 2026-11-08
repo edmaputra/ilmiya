@@ -37,7 +37,7 @@ class VaultConsulPropertiesTest {
     }
 
     @Test
-    fun `should allow configuring k8s cluster endpoints via environment properties`() {
+    fun `should have in-cluster endpoints configured by default`() {
         contextRunner
             .withPropertyValues(
                 "spring.cloud.consul.host=consul-server",

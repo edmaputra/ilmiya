@@ -50,14 +50,14 @@ For the full product vision, target market segments, and roadmap breakdown, see:
 
 ### Infrastructure & Environments
 
-Ilmiya is designed to run seamlessly in Kubernetes environments (`ed-devops`), inside Docker Compose, or as a standalone local service:
+Ilmiya is pre-configured to run out of the box in the local Kubernetes DevOps platform (`ed-devops`), inside Docker Compose, or as a standalone local service:
 
-| Profile | Target Environment | Default Services & Endpoints | Usage |
+| Mode / Profile | Target Environment | Default Service Endpoints | Usage |
 |---|---|---|---|
-| **`k8s`** | **Default Profile** (Kubernetes / `ed-devops`) | Consul: `consul-server:8500`<br>Vault: `http://vault:8200`<br>PostgreSQL: `postgres:5432` | **Default.** Runs without extra flags. Ideal for cluster deployments and dynamic Kaniko builds. |
-| **`local`** | Local Host (Native Gradle + Docker Infrastructure) | Consul: `localhost:8500`<br>Vault: `http://localhost:8200`<br>PostgreSQL: `localhost:5543`<br>Seed Data: `enabled` | `./gradlew :ilmiya-app:bootRun --args='--spring.profiles.active=local'` |
-| **`compose`** | Full Docker Compose Stack | Consul: `consul:8500`<br>Vault: `http://vault:8200`<br>PostgreSQL: `postgres:5432` | `docker compose up -d` |
-| **`standalone`** | Standalone Local (Offline / Zero External Infra) | Consul & Vault: **Disabled**<br>PostgreSQL: `localhost:5543` | `./gradlew :ilmiya-app:bootRun --args='--spring.profiles.active=standalone'` |
+| **Default** _(No profile flag)_ | Kubernetes / `ed-devops` Cluster | Consul: `consul-server:8500`<br>Vault: `http://vault:8200`<br>PostgreSQL: `postgres:5432` | **Default.** Runs with zero flags or arguments.<br>`./gradlew :ilmiya-app:bootRun` |
+| **`local`** | Local Host (Native Gradle + Docker Compose ports) | Consul: `localhost:8500`<br>Vault: `http://localhost:8200`<br>PostgreSQL: `localhost:5543`<br>Seed Data: `enabled` | `./gradlew :ilmiya-app:bootRun --args='--spring.profiles.active=local'` |
+| **`compose`** | Full Docker Compose Stack | Consul: `consul:8500`<br>Vault: `http://vault:8200`<br>PostgreSQL: `postgres:5432`<br>Seed Data: `enabled` | `docker compose up -d` |
+| **`standalone`** | Standalone Local (Offline / No external infra) | Consul & Vault: **Disabled**<br>PostgreSQL: `localhost:5543` | `./gradlew :ilmiya-app:bootRun --args='--spring.profiles.active=standalone'` |
 
 #### 1. Start Infrastructure via Docker Compose
 ```bash
@@ -89,7 +89,7 @@ docker compose --profile tools up -d
 
 **Option A: Default (Kubernetes / ed-devops)**:
 ```bash
-# Run with no arguments (uses default 'k8s' profile targeting in-cluster services):
+# Run with no arguments (uses default in-cluster services):
 ./gradlew :ilmiya-app:bootRun
 ```
 
