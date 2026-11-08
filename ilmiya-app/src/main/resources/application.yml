@@ -1,6 +1,8 @@
 spring:
   application:
     name: ilmiya-backend
+  profiles:
+    default: k8s
   config:
     import:
       - "optional:consul:"
@@ -8,7 +10,7 @@ spring:
   cloud:
     consul:
       enabled: ${SPRING_CLOUD_CONSUL_ENABLED:true}
-      host: ${SPRING_CLOUD_CONSUL_HOST:localhost}
+      host: ${SPRING_CLOUD_CONSUL_HOST:consul-server}
       port: ${SPRING_CLOUD_CONSUL_PORT:8500}
       config:
         enabled: ${SPRING_CLOUD_CONSUL_CONFIG_ENABLED:true}
@@ -25,7 +27,7 @@ spring:
         prefer-ip-address: true
     vault:
       enabled: ${SPRING_CLOUD_VAULT_ENABLED:true}
-      uri: ${SPRING_CLOUD_VAULT_URI:http://localhost:8200}
+      uri: ${SPRING_CLOUD_VAULT_URI:http://vault:8200}
       connection-timeout: 5000
       read-timeout: 15000
       authentication: ${SPRING_CLOUD_VAULT_AUTHENTICATION:TOKEN}
@@ -35,7 +37,7 @@ spring:
         backend: secret
         default-context: application
   datasource:
-    url: ${SPRING_DATASOURCE_URL:jdbc:postgresql://localhost:5432/ilmiya_db}
+    url: ${SPRING_DATASOURCE_URL:jdbc:postgresql://postgres:5432/ilmiya_db}
     username: ${SPRING_DATASOURCE_USERNAME:ilmiya_user}
     password: ${SPRING_DATASOURCE_PASSWORD:ilmiya_password}
     driver-class-name: org.postgresql.Driver
@@ -103,6 +105,12 @@ spring:
       on-profile: local
   datasource:
     url: ${SPRING_DATASOURCE_URL:jdbc:postgresql://localhost:5543/ilmiya_db}
+  cloud:
+    consul:
+      host: ${SPRING_CLOUD_CONSUL_HOST:localhost}
+      port: ${SPRING_CLOUD_CONSUL_PORT:8500}
+    vault:
+      uri: ${SPRING_CLOUD_VAULT_URI:http://localhost:8200}
 
 ilmiya:
   seed:
@@ -113,11 +121,31 @@ spring:
   config:
     activate:
       on-profile: standalone
+  datasource:
+    url: ${SPRING_DATASOURCE_URL:jdbc:postgresql://localhost:5543/ilmiya_db}
   cloud:
     consul:
       enabled: false
     vault:
       enabled: false
+
+---
+spring:
+  config:
+    activate:
+      on-profile: compose
+  datasource:
+    url: ${SPRING_DATASOURCE_URL:jdbc:postgresql://postgres:5432/ilmiya_db}
+  cloud:
+    consul:
+      host: ${SPRING_CLOUD_CONSUL_HOST:consul}
+      port: ${SPRING_CLOUD_CONSUL_PORT:8500}
+    vault:
+      uri: ${SPRING_CLOUD_VAULT_URI:http://vault:8200}
+
+ilmiya:
+  seed:
+    enabled: true
 
 ---
 spring:

@@ -48,19 +48,20 @@ For the full product vision, target market segments, and roadmap breakdown, see:
 - JDK 25
 - Docker & Docker Compose (for PostgreSQL, HashiCorp Consul, and HashiCorp Vault)
 
-### Infrastructure & Local Services
+### Infrastructure & Environments
 
-By default, Ilmiya connects to **HashiCorp Vault** (for secrets) and **HashiCorp Consul** (for distributed KV configuration and service discovery) out of the box without requiring extra profile flags.
+Ilmiya is designed to run seamlessly in Kubernetes environments (`ed-devops`), inside Docker Compose, or as a standalone local service:
 
-| Workflow | Infrastructure Required | Spring Profile | Description |
+| Profile | Target Environment | Default Services & Endpoints | Usage |
 |---|---|---|---|
-| **Default / Hybrid** (Recommended) | PostgreSQL, Consul, Vault | _(default)_ or `local` | **Default behavior.** Uses Vault for secrets and Consul for configuration & service discovery without flags. |
-| **Full Containerized** | Entire stack in Docker | `local` | Runs PostgreSQL, Consul, Vault, initializers, and the Spring Boot application via Docker Compose. |
-| **Standalone Minimal** | PostgreSQL only | `local,standalone` | Optional fallback: disables Consul and Vault when running offline without external services. |
+| **`k8s`** | **Default Profile** (Kubernetes / `ed-devops`) | Consul: `consul-server:8500`<br>Vault: `http://vault:8200`<br>PostgreSQL: `postgres:5432` | **Default.** Runs without extra flags. Ideal for cluster deployments and dynamic Kaniko builds. |
+| **`local`** | Local Host (Native Gradle + Docker Infrastructure) | Consul: `localhost:8500`<br>Vault: `http://localhost:8200`<br>PostgreSQL: `localhost:5543`<br>Seed Data: `enabled` | `./gradlew :ilmiya-app:bootRun --args='--spring.profiles.active=local'` |
+| **`compose`** | Full Docker Compose Stack | Consul: `consul:8500`<br>Vault: `http://vault:8200`<br>PostgreSQL: `postgres:5432` | `docker compose up -d` |
+| **`standalone`** | Standalone Local (Offline / Zero External Infra) | Consul & Vault: **Disabled**<br>PostgreSQL: `localhost:5543` | `./gradlew :ilmiya-app:bootRun --args='--spring.profiles.active=standalone'` |
 
 #### 1. Start Infrastructure via Docker Compose
 ```bash
-# Recommended: Start database, Consul, and Vault (with automated secrets seeding)
+# Start PostgreSQL, Consul, and Vault (with automated secrets seeding)
 docker compose up -d postgres consul vault consul-vault-init
 
 # (Optional) Launch with pgAdmin UI at http://localhost:5050
@@ -86,23 +87,25 @@ docker compose --profile tools up -d
 
 ### Run Application
 
-**Option A: Default (Consul and Vault enabled out of the box)**:
+**Option A: Default (Kubernetes / ed-devops)**:
 ```bash
-# Run with no arguments (uses default Vault and Consul config):
+# Run with no arguments (uses default 'k8s' profile targeting in-cluster services):
 ./gradlew :ilmiya-app:bootRun
+```
 
-# Or explicitly activate the local profile for local test data seeding:
+**Option B: Local Host Development (Native app + Docker Compose infra)**:
+```bash
 ./gradlew :ilmiya-app:bootRun --args='--spring.profiles.active=local'
 ```
 
-**Option B: Full Containerized Stack**:
+**Option C: Full Containerized Stack via Docker Compose**:
 ```bash
 docker compose up -d --build
 ```
 
-**Option C: Standalone Minimal (Bypass Vault and Consul)**:
+**Option D: Standalone Local (Bypass Vault and Consul)**:
 ```bash
-./gradlew :ilmiya-app:bootRun --args='--spring.profiles.active=local,standalone'
+./gradlew :ilmiya-app:bootRun --args='--spring.profiles.active=standalone'
 ```
 
 Once running, access Swagger UI at:

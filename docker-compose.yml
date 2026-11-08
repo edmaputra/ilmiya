@@ -107,7 +107,7 @@ services:
       consul-vault-init:
         condition: service_completed_successfully
     environment:
-      SPRING_PROFILES_ACTIVE: ${SPRING_PROFILES_ACTIVE:-local}
+      SPRING_PROFILES_ACTIVE: ${SPRING_PROFILES_ACTIVE:-compose}
       SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/${POSTGRES_DB:-ilmiya_db}
       SPRING_DATASOURCE_USERNAME: ${POSTGRES_USER:-ilmiya_user}
       SPRING_DATASOURCE_PASSWORD: ${POSTGRES_PASSWORD:-ilmiya_password}

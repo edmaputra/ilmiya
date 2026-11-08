@@ -54,4 +54,42 @@ class VaultConsulPropertiesTest {
                 assertThat(dbUrl).isEqualTo("jdbc:postgresql://postgres:5432/ilmiya_db")
             }
     }
+
+    @Test
+    fun `should allow configuring local development endpoints via local profile`() {
+        contextRunner
+            .withPropertyValues(
+                "spring.cloud.consul.host=localhost",
+                "spring.cloud.vault.uri=http://localhost:8200",
+                "spring.datasource.url=jdbc:postgresql://localhost:5543/ilmiya_db"
+            )
+            .run { context ->
+                val consulHost = context.environment.getProperty("spring.cloud.consul.host")
+                val vaultUri = context.environment.getProperty("spring.cloud.vault.uri")
+                val dbUrl = context.environment.getProperty("spring.datasource.url")
+
+                assertThat(consulHost).isEqualTo("localhost")
+                assertThat(vaultUri).isEqualTo("http://localhost:8200")
+                assertThat(dbUrl).isEqualTo("jdbc:postgresql://localhost:5543/ilmiya_db")
+            }
+    }
+
+    @Test
+    fun `should allow configuring docker compose endpoints via compose profile`() {
+        contextRunner
+            .withPropertyValues(
+                "spring.cloud.consul.host=consul",
+                "spring.cloud.vault.uri=http://vault:8200",
+                "spring.datasource.url=jdbc:postgresql://postgres:5432/ilmiya_db"
+            )
+            .run { context ->
+                val consulHost = context.environment.getProperty("spring.cloud.consul.host")
+                val vaultUri = context.environment.getProperty("spring.cloud.vault.uri")
+                val dbUrl = context.environment.getProperty("spring.datasource.url")
+
+                assertThat(consulHost).isEqualTo("consul")
+                assertThat(vaultUri).isEqualTo("http://vault:8200")
+                assertThat(dbUrl).isEqualTo("jdbc:postgresql://postgres:5432/ilmiya_db")
+            }
+    }
 }
