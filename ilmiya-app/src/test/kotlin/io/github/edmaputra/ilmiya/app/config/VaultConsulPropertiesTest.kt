@@ -21,22 +21,6 @@ class VaultConsulPropertiesTest {
     }
 
     @Test
-    fun `should allow disabling consul and vault via environment properties`() {
-        contextRunner
-            .withPropertyValues(
-                "spring.cloud.consul.enabled=false",
-                "spring.cloud.vault.enabled=false"
-            )
-            .run { context ->
-                val consulEnabled = context.environment.getProperty("spring.cloud.consul.enabled", Boolean::class.java)
-                val vaultEnabled = context.environment.getProperty("spring.cloud.vault.enabled", Boolean::class.java)
-
-                assertThat(consulEnabled).isFalse()
-                assertThat(vaultEnabled).isFalse()
-            }
-    }
-
-    @Test
     fun `should have in-cluster endpoints configured by default`() {
         contextRunner
             .withPropertyValues(
@@ -56,7 +40,7 @@ class VaultConsulPropertiesTest {
     }
 
     @Test
-    fun `should allow configuring local development endpoints via local profile`() {
+    fun `should configure dev profile with docker compose endpoints`() {
         contextRunner
             .withPropertyValues(
                 "spring.cloud.consul.host=localhost",
@@ -75,21 +59,24 @@ class VaultConsulPropertiesTest {
     }
 
     @Test
-    fun `should allow configuring docker compose endpoints via compose profile`() {
+    fun `should configure standalone profile with H2 in-memory database and disable consul and vault`() {
         contextRunner
             .withPropertyValues(
-                "spring.cloud.consul.host=consul",
-                "spring.cloud.vault.uri=http://vault:8200",
-                "spring.datasource.url=jdbc:postgresql://postgres:5432/ilmiya_db"
+                "spring.cloud.consul.enabled=false",
+                "spring.cloud.vault.enabled=false",
+                "spring.datasource.url=jdbc:h2:mem:ilmiya_db;DB_CLOSE_DELAY=-1;DB_CLOSE_ON_EXIT=FALSE;MODE=PostgreSQL;DATABASE_TO_LOWER=TRUE;DEFAULT_NULL_ORDERING=HIGH",
+                "spring.datasource.driver-class-name=org.h2.Driver"
             )
             .run { context ->
-                val consulHost = context.environment.getProperty("spring.cloud.consul.host")
-                val vaultUri = context.environment.getProperty("spring.cloud.vault.uri")
+                val consulEnabled = context.environment.getProperty("spring.cloud.consul.enabled", Boolean::class.java)
+                val vaultEnabled = context.environment.getProperty("spring.cloud.vault.enabled", Boolean::class.java)
                 val dbUrl = context.environment.getProperty("spring.datasource.url")
+                val driverClass = context.environment.getProperty("spring.datasource.driver-class-name")
 
-                assertThat(consulHost).isEqualTo("consul")
-                assertThat(vaultUri).isEqualTo("http://vault:8200")
-                assertThat(dbUrl).isEqualTo("jdbc:postgresql://postgres:5432/ilmiya_db")
+                assertThat(consulEnabled).isFalse()
+                assertThat(vaultEnabled).isFalse()
+                assertThat(dbUrl).contains("jdbc:h2:mem:ilmiya_db")
+                assertThat(driverClass).isEqualTo("org.h2.Driver")
             }
     }
 }

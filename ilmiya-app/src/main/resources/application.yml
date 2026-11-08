@@ -100,7 +100,7 @@ logging:
 spring:
   config:
     activate:
-      on-profile: local
+      on-profile: dev,local
   datasource:
     url: ${SPRING_DATASOURCE_URL:jdbc:postgresql://localhost:5543/ilmiya_db}
   cloud:
@@ -120,41 +120,25 @@ spring:
     activate:
       on-profile: standalone
   datasource:
-    url: ${SPRING_DATASOURCE_URL:jdbc:postgresql://localhost:5543/ilmiya_db}
+    url: ${SPRING_DATASOURCE_URL:jdbc:h2:mem:ilmiya_db;DB_CLOSE_DELAY=-1;DB_CLOSE_ON_EXIT=FALSE;MODE=PostgreSQL;DATABASE_TO_LOWER=TRUE;DEFAULT_NULL_ORDERING=HIGH}
+    driver-class-name: org.h2.Driver
+    username: sa
+    password: ""
+  jpa:
+    database-platform: org.hibernate.dialect.H2Dialect
   cloud:
     consul:
       enabled: false
     vault:
       enabled: false
-
----
-spring:
-  config:
-    activate:
-      on-profile: compose
-  datasource:
-    url: ${SPRING_DATASOURCE_URL:jdbc:postgresql://postgres:5432/ilmiya_db}
-  cloud:
-    consul:
-      host: ${SPRING_CLOUD_CONSUL_HOST:consul}
-      port: ${SPRING_CLOUD_CONSUL_PORT:8500}
-    vault:
-      uri: ${SPRING_CLOUD_VAULT_URI:http://vault:8200}
+  h2:
+    console:
+      enabled: true
+      path: /h2-console
 
 ilmiya:
   seed:
     enabled: true
-
----
-spring:
-  config:
-    activate:
-      on-profile: vault-consul
-  cloud:
-    consul:
-      enabled: true
-    vault:
-      enabled: true
 
 
 
