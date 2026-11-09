@@ -26,12 +26,18 @@ dependencies {
 
     // Database & Migrations
     runtimeOnly("org.postgresql:postgresql")
+    runtimeOnly("com.h2database:h2")
     implementation("org.springframework.boot:spring-boot-starter-data-jpa")
     implementation("org.springframework.boot:spring-boot-starter-flyway")
     implementation("org.flywaydb:flyway-database-postgresql")
 
     // OpenAPI / Swagger Documentation
     implementation("org.springdoc:springdoc-openapi-starter-webmvc-ui:3.1.0")
+
+    // HashiCorp Vault & Consul Configuration & Discovery
+    implementation("org.springframework.cloud:spring-cloud-starter-vault-config")
+    implementation("org.springframework.cloud:spring-cloud-starter-consul-config")
+    implementation("org.springframework.cloud:spring-cloud-starter-consul-discovery")
 
     // Test dependencies
     testImplementation("org.springframework.boot:spring-boot-starter-webmvc-test")

@@ -1,6 +1,6 @@
 # Ilmiya
 
-> Multi-tenant School Management System (SMS) and Educational ERP built with Kotlin 2.3, Spring Boot 4.1.1, and Java 25.
+> Multi-tenant School Management System (SMS) and Educational ERP built with Kotlin 2.3, Spring Boot 4.1.2, and Java 25.
 
 ---
 
@@ -17,7 +17,7 @@ For the full product vision, target market segments, and roadmap breakdown, see:
 ## Architecture & Technology Stack
 
 - **Language & Runtime**: Kotlin 2.3.21, Java 25 (with `ScopedValue` multi-tenancy context)
-- **Framework**: Spring Boot 4.1.1
+- **Framework**: Spring Boot 4.1.2
 - **Database & Persistence**: PostgreSQL with Flyway database migrations and Spring Data JPA
 - **API Documentation**: OpenAPI 3 with Swagger UI
 - **Architecture Pattern**: Hexagonal Architecture (Ports and Adapters) & Domain-Driven Design (DDD)
@@ -46,32 +46,65 @@ For the full product vision, target market segments, and roadmap breakdown, see:
 
 ### Prerequisites
 - JDK 25
-- Docker & Docker Compose (for PostgreSQL)
+- Docker & Docker Compose (for PostgreSQL, HashiCorp Consul, and HashiCorp Vault)
 
-### Start Infrastructure (PostgreSQL)
+### Infrastructure & Environments
+
+Ilmiya is pre-configured with three clear execution profiles:
+
+| Profile | Target Environment | Default Service Endpoints | Usage |
+|---|---|---|---|
+| **`default`** _(No profile flag)_ | Kubernetes / `ed-devops` Cluster | Consul: `consul-server:8500`<br>Vault: `http://vault:8200`<br>PostgreSQL: `postgres:5432`<br>Consul & Vault: **Enabled** | **Default.** Runs without arguments.<br>`./gradlew :ilmiya-app:bootRun` |
+| **`dev`** | Local Development & `docker-compose.yml` integration | Consul: `localhost:8500`<br>Vault: `http://localhost:8200`<br>PostgreSQL: `localhost:5543`<br>Seed Data: `enabled` | `./gradlew :ilmiya-app:bootRun --args='--spring.profiles.active=dev'`<br>_(Also used in `docker compose up -d`)_ |
+| **`standalone`** | Standalone In-Memory (Zero External Dependencies) | Database: **In-Memory H2** (`MODE=PostgreSQL`)<br>Consul & Vault: **Disabled**<br>H2 Console: `/h2-console`<br>Seed Data: `enabled` | `./gradlew :ilmiya-app:bootRun --args='--spring.profiles.active=standalone'` |
+
+#### 1. Start Infrastructure via Docker Compose
 ```bash
-# Start PostgreSQL database container
-docker compose up -d postgres
+# Start PostgreSQL, Consul, and Vault (with automated secrets seeding)
+docker compose up -d postgres consul vault consul-vault-init
 
-# (Optional) Start with pgAdmin web UI at http://localhost:5050
+# (Optional) Launch with pgAdmin UI at http://localhost:5050
 docker compose --profile tools up -d
 ```
+
+> [!NOTE]
+> The `consul-vault-init` container automatically seeds the local Vault secrets (`secret/ilmiya-backend`) and Consul KV (`config/ilmiya-backend/data`). If you ever need to re-seed or update them manually, run `./scripts/init-vault-consul.sh`.
+
+#### 2. Service Management UIs
+- **Consul Web UI**: [http://localhost:8500/ui/](http://localhost:8500/ui/) (KV store and service discovery catalog)
+- **Vault Web UI**: [http://localhost:8200/ui/](http://localhost:8200/ui/) (Token: `root`)
+- **pgAdmin**: [http://localhost:5050](http://localhost:5050) (User: `admin@ilmiya.local`, Password: `admin`)
+
+---
 
 ### Build & Run Tests
 ```bash
 ./gradlew check
 ```
 
+---
+
 ### Run Application
 
-**Option A: Run with Gradle (Local Profile & Seed Data)**:
+**Option A: Default (In-Cluster Kubernetes / ed-devops)**:
 ```bash
-./gradlew :ilmiya-app:bootRun --args='--spring.profiles.active=local'
+# Run with no arguments (uses default in-cluster services):
+./gradlew :ilmiya-app:bootRun
 ```
 
-**Option B: Run Entire Stack via Docker Compose**:
+**Option B: Dev Profile (Integrate with docker-compose.yml)**:
+```bash
+./gradlew :ilmiya-app:bootRun --args='--spring.profiles.active=dev'
+```
+
+**Option C: Full Containerized Stack via Docker Compose**:
 ```bash
 docker compose up -d --build
+```
+
+**Option D: Standalone Profile (H2 Database, No Consul or Vault)**:
+```bash
+./gradlew :ilmiya-app:bootRun --args='--spring.profiles.active=standalone'
 ```
 
 Once running, access Swagger UI at:

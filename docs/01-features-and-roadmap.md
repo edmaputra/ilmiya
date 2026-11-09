@@ -4,7 +4,7 @@
 
 **Ilmiya** is an open-source, multi-tenant School Management System (SMS) and Educational ERP designed for primary, secondary, vocational, and Islamic educational institutions (SD, SMP, SMA, SMK, MI, MTs, MA, and Pesantren).
 
-Built with **Kotlin 2.3**, **Spring Boot 4.1.1**, and **Java 25**, Ilmiya follows **Hexagonal Architecture (Ports & Adapters)** and **Domain-Driven Design (DDD)**. It uses a **shared-database, tenant-discriminator** multi-tenancy model powered by Java 25 `ScopedValue` execution contexts.
+Built with **Kotlin 2.3**, **Spring Boot 4.1.2**, and **Java 25**, Ilmiya follows **Hexagonal Architecture (Ports & Adapters)** and **Domain-Driven Design (DDD)**. It uses a **shared-database, tenant-discriminator** multi-tenancy model powered by Java 25 `ScopedValue` execution contexts.
 
 ---
 
@@ -84,7 +84,7 @@ The system is partitioned into 10 decoupled Gradle modules:
 | `ilmiya-exam` | **Examinations & Grading**: Exam periods (UTS, UAS, Daily Tests), assessment components, customizable grading scales, marksheet recording, and automated report card (e-Rapor) generation. |
 | `ilmiya-finance` | **Fee Management & Bursar**: Fee categories (SPP, uang pangkal, seragam, buku), fee schedules, student fee discounts/scholarships, invoice generation, payment processing, receipts, and cash journal summaries. |
 | `ilmiya-hr` | **Human Resources & Payroll**: Staff/teacher master records, departments, designations, staff leave requests & approvals, salary component configuration, and monthly payroll processing. |
-| `ilmiya-app` | **Composition Root**: Spring Boot 4.1.1 executable launcher, transactional use-case decorators, Flyway database migrations, OpenAPI 3 (Swagger UI) integration, and production configuration. |
+| `ilmiya-app` | **Composition Root**: Spring Boot 4.1.2 executable launcher, transactional use-case decorators, Flyway database migrations, OpenAPI 3 (Swagger UI) integration, and production configuration. |
 
 ---
 
@@ -92,7 +92,7 @@ The system is partitioned into 10 decoupled Gradle modules:
 
 ### Phase 0: Project Setup & Architecture Foundation (Complete)
 - **Java 25 + Kotlin 2.3.21** toolchain configuration with strict `-Xjsr305=strict` null-safety.
-- **Spring Boot 4.1.1** modular monolith setup with clean boundary separation.
+- **Spring Boot 4.1.2** modular monolith setup with clean boundary separation.
 - **PostgreSQL + Flyway** migration engine initialized with baseline tracking (`V1__init_schema.sql`).
 - **Framework-Agnostic Kernel (`ilmiya-common`)**:
   - `TenantId` typed value object and `TenantAware` marker.

@@ -38,7 +38,7 @@ class SecurityConfig(
 ) {
 
     @Bean
-    @Profile("local")
+    @Profile("local", "dev", "standalone")
     fun corsConfigurationSource(): org.springframework.web.cors.CorsConfigurationSource {
         val configuration = org.springframework.web.cors.CorsConfiguration()
         configuration.allowedOriginPatterns = listOf("*")

@@ -1,8 +1,41 @@
 spring:
   application:
     name: ilmiya-backend
+  config:
+    import:
+      - "optional:consul:"
+      - "optional:vault://"
+  cloud:
+    consul:
+      enabled: ${SPRING_CLOUD_CONSUL_ENABLED:true}
+      host: ${SPRING_CLOUD_CONSUL_HOST:consul-server}
+      port: ${SPRING_CLOUD_CONSUL_PORT:8500}
+      config:
+        enabled: ${SPRING_CLOUD_CONSUL_CONFIG_ENABLED:true}
+        format: YAML
+        prefix: config
+        default-context: application
+        data-key: data
+      discovery:
+        enabled: ${SPRING_CLOUD_CONSUL_DISCOVERY_ENABLED:true}
+        instance-id: ${spring.application.name}:${random.value}
+        service-name: ${spring.application.name}
+        health-check-path: /actuator/health
+        health-check-interval: 10s
+        prefer-ip-address: true
+    vault:
+      enabled: ${SPRING_CLOUD_VAULT_ENABLED:true}
+      uri: ${SPRING_CLOUD_VAULT_URI:http://vault:8200}
+      connection-timeout: 5000
+      read-timeout: 15000
+      authentication: ${SPRING_CLOUD_VAULT_AUTHENTICATION:TOKEN}
+      token: ${SPRING_CLOUD_VAULT_TOKEN:root}
+      kv:
+        enabled: true
+        backend: secret
+        default-context: application
   datasource:
-    url: ${SPRING_DATASOURCE_URL:jdbc:postgresql://localhost:5432/ilmiya_db}
+    url: ${SPRING_DATASOURCE_URL:jdbc:postgresql://postgres:5432/ilmiya_db}
     username: ${SPRING_DATASOURCE_USERNAME:ilmiya_user}
     password: ${SPRING_DATASOURCE_PASSWORD:ilmiya_password}
     driver-class-name: org.postgresql.Driver
@@ -23,6 +56,17 @@ spring:
     enabled: true
   jackson:
     default-property-inclusion: non_null
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics
+  endpoint:
+    health:
+      show-details: always
+      probes:
+        enabled: true
 
 iam:
   jwt:
@@ -74,16 +118,3 @@ logging:
   level:
     root: INFO
     io.github.edmaputra.ilmiya: DEBUG
-
----
-spring:
-  config:
-    activate:
-      on-profile: local
-  datasource:
-    url: ${SPRING_DATASOURCE_URL:jdbc:postgresql://localhost:5543/ilmiya_db}
-
-ilmiya:
-  seed:
-    enabled: true
-
