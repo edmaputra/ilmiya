@@ -38,13 +38,13 @@ import java.time.LocalDate
  * Local environment data seeder that initializes baseline development entities
  * (School, Operational Settings, Academic Year, Terms) and IAM seed data (Roles, Users, Role Assignments).
  *
- * Runs exclusively when the 'local' profile is active and 'ilmiya.seed.enabled' is true.
+ * Runs when 'local', 'dev', or 'standalone' profile is active and 'ilmiya.seed.enabled' is true.
  *
  * @author edmaputra
  * @since 0.0.1
  */
 @Component
-@Profile("local")
+@Profile("local", "dev", "standalone")
 @ConditionalOnProperty(name = ["ilmiya.seed.enabled"], havingValue = "true", matchIfMissing = true)
 class LocalDataSeeder(
     private val schoolRepository: SchoolRepository,

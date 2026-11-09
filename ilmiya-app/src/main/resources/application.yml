@@ -112,7 +112,7 @@ spring:
 
 ilmiya:
   seed:
-    enabled: true
+    enabled: ${ilmiya.seed.enabled:${ilmiya.seed.enable:true}}
 
 ---
 spring:
@@ -139,7 +139,7 @@ spring:
 
 ilmiya:
   seed:
-    enabled: true
+    enabled: ${ilmiya.seed.enabled:${ilmiya.seed.enable:true}}
 
 
 

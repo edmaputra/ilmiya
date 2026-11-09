@@ -204,4 +204,11 @@ class LocalDataSeederTest {
         verify(exactly = 0) { manageRoleUseCase.createRole(any()) }
         verify(exactly = 0) { manageUserUseCase.createUser(any()) }
     }
+
+    @Test
+    fun `should be active for local, dev, and standalone profiles`() {
+        val profileAnnotation = LocalDataSeeder::class.java.getAnnotation(org.springframework.context.annotation.Profile::class.java)
+        org.assertj.core.api.Assertions.assertThat(profileAnnotation).isNotNull
+        org.assertj.core.api.Assertions.assertThat(profileAnnotation.value).containsExactlyInAnyOrder("local", "dev", "standalone")
+    }
 }
