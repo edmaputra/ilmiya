@@ -79,14 +79,7 @@ services:
         echo "Vault secrets initialized successfully."
 
         echo "Initializing Consul KV configuration for ilmiya-backend..."
-        curl -s -f -X PUT http://consul:8500/v1/kv/config/ilmiya-backend/data \
-          --data-binary 'logging:
-          level:
-            io.github.edmaputra.ilmiya: DEBUG
-        ilmiya:
-          seed:
-            enabled: true
-        '
+        printf "logging:\n  level:\n    root: INFO\n    io.github.edmaputra.ilmiya: DEBUG\nilmiya:\n  seed:\n    enabled: true\n" | curl -s -f -X PUT http://consul:8500/v1/kv/config/ilmiya-backend/data --data-binary @-
         echo "Consul KV configuration initialized successfully."
         echo "Local Vault and Consul initialization completed."
     networks:
@@ -119,6 +112,7 @@ services:
       SPRING_CLOUD_VAULT_ENABLED: ${SPRING_CLOUD_VAULT_ENABLED:-true}
       SPRING_CLOUD_VAULT_URI: http://vault:8200
       SPRING_CLOUD_VAULT_TOKEN: ${VAULT_DEV_ROOT_TOKEN_ID:-root}
+      ILMIYA_SEED_ENABLED: ${ILMIYA_SEED_ENABLED:-true}
       SERVER_PORT: 8080
     ports:
       - "8080:8080"
