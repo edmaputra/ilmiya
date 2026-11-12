@@ -1,16 +1,16 @@
-package io.github.edmaputra.ilmiya.app.school
+package io.github.edmaputra.ilmiya.app.tenant
 
 import com.ninjasquad.springmockk.MockkBean
 import io.github.edmaputra.ilmiya.common.domain.TenantId
 import io.github.edmaputra.ilmiya.common.dto.PageResponse
-import io.github.edmaputra.ilmiya.core.school.adapter.web.TenantController
-import io.github.edmaputra.ilmiya.core.school.domain.School
-import io.github.edmaputra.ilmiya.core.school.domain.SchoolStatus
-import io.github.edmaputra.ilmiya.core.school.domain.port.`in`.CreateTenantUseCase
-import io.github.edmaputra.ilmiya.core.school.domain.port.`in`.DeleteTenantUseCase
-import io.github.edmaputra.ilmiya.core.school.domain.port.`in`.GetTenantUseCase
-import io.github.edmaputra.ilmiya.core.school.domain.port.`in`.ListTenantsUseCase
-import io.github.edmaputra.ilmiya.core.school.domain.port.`in`.UpdateTenantUseCase
+import io.github.edmaputra.ilmiya.core.tenant.adapter.web.TenantController
+import io.github.edmaputra.ilmiya.core.tenant.domain.Tenant
+import io.github.edmaputra.ilmiya.core.tenant.domain.TenantStatus
+import io.github.edmaputra.ilmiya.core.tenant.domain.port.`in`.CreateTenantUseCase
+import io.github.edmaputra.ilmiya.core.tenant.domain.port.`in`.DeleteTenantUseCase
+import io.github.edmaputra.ilmiya.core.tenant.domain.port.`in`.GetTenantUseCase
+import io.github.edmaputra.ilmiya.core.tenant.domain.port.`in`.ListTenantsUseCase
+import io.github.edmaputra.ilmiya.core.tenant.domain.port.`in`.UpdateTenantUseCase
 import io.mockk.every
 import org.junit.jupiter.api.Test
 import org.springframework.beans.factory.annotation.Autowired
@@ -26,7 +26,7 @@ import org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPat
 import org.springframework.test.web.servlet.result.MockMvcResultMatchers.status
 
 /**
- * Controller unit test for tenant CRUD management endpoints.
+ * Controller unit test for tenant foundation CRUD management endpoints.
  *
  * @author edmaputra
  * @since 0.0.1
@@ -52,21 +52,22 @@ class TenantControllerTest {
     @MockkBean
     private lateinit var deleteTenantUseCase: DeleteTenantUseCase
 
-    private val tenantId = TenantId.of("sma-nusantara-1")
+    private val tenantId = TenantId.of("yayasan-darussalam-01")
 
-    private val sampleSchool = School.create(
+    private val sampleTenant = Tenant.create(
         tenantId = tenantId,
-        name = "SMA Nusantara 1 Jakarta",
-        institutionCode = "SMAN-1-JKT",
-        address = "Jl. Merdeka No. 45",
-        contactEmail = "info@smanusantara1.sch.id",
+        name = "Yayasan Pendidikan Darussalam",
+        legalEntityNumber = "SK-AHU-0012345",
+        registrationType = "YAYASAN",
+        address = "Jl. Merdeka No. 45, Jakarta",
+        contactEmail = "info@darussalam.org",
         contactPhone = "+62-21-5550199"
     )
 
     @Test
     fun `should list tenants with default pagination parameters`() {
         val pageResponse = PageResponse.of(
-            content = listOf(sampleSchool),
+            content = listOf(sampleTenant),
             page = 0,
             size = 20,
             totalElements = 1L
@@ -77,9 +78,9 @@ class TenantControllerTest {
         mockMvc.perform(get("/api/v1/tenants"))
             .andExpect(status().isOk)
             .andExpect(jsonPath("$.content").isArray)
-            .andExpect(jsonPath("$.content[0].tenantId").value("sma-nusantara-1"))
-            .andExpect(jsonPath("$.content[0].name").value("SMA Nusantara 1 Jakarta"))
-            .andExpect(jsonPath("$.content[0].institutionCode").value("SMAN-1-JKT"))
+            .andExpect(jsonPath("$.content[0].tenantId").value("yayasan-darussalam-01"))
+            .andExpect(jsonPath("$.content[0].name").value("Yayasan Pendidikan Darussalam"))
+            .andExpect(jsonPath("$.content[0].legalEntityNumber").value("SK-AHU-0012345"))
             .andExpect(jsonPath("$.page").value(0))
             .andExpect(jsonPath("$.size").value(20))
             .andExpect(jsonPath("$.totalElements").value(1))
@@ -90,19 +91,19 @@ class TenantControllerTest {
 
     @Test
     fun `should get tenant by tenant identifier`() {
-        every { getTenantUseCase.getTenant(tenantId) } returns sampleSchool
+        every { getTenantUseCase.getTenant(tenantId) } returns sampleTenant
 
-        mockMvc.perform(get("/api/v1/tenants/sma-nusantara-1"))
+        mockMvc.perform(get("/api/v1/tenants/yayasan-darussalam-01"))
             .andExpect(status().isOk)
-            .andExpect(jsonPath("$.tenantId").value("sma-nusantara-1"))
-            .andExpect(jsonPath("$.name").value("SMA Nusantara 1 Jakarta"))
-            .andExpect(jsonPath("$.institutionCode").value("SMAN-1-JKT"))
+            .andExpect(jsonPath("$.tenantId").value("yayasan-darussalam-01"))
+            .andExpect(jsonPath("$.name").value("Yayasan Pendidikan Darussalam"))
+            .andExpect(jsonPath("$.legalEntityNumber").value("SK-AHU-0012345"))
             .andExpect(jsonPath("$.status").value("ACTIVE"))
     }
 
     @Test
     fun `should create tenant when request payload is valid`() {
-        every { createTenantUseCase.createTenant(any()) } returns sampleSchool
+        every { createTenantUseCase.createTenant(any()) } returns sampleTenant
 
         mockMvc.perform(
             post("/api/v1/tenants")
@@ -110,42 +111,43 @@ class TenantControllerTest {
                 .content(
                     """
                     {
-                        "tenantId": "sma-nusantara-1",
-                        "name": "SMA Nusantara 1 Jakarta",
-                        "institutionCode": "SMAN-1-JKT",
-                        "address": "Jl. Merdeka No. 45",
-                        "contactEmail": "info@smanusantara1.sch.id",
+                        "tenantId": "yayasan-darussalam-01",
+                        "name": "Yayasan Pendidikan Darussalam",
+                        "legalEntityNumber": "SK-AHU-0012345",
+                        "registrationType": "YAYASAN",
+                        "address": "Jl. Merdeka No. 45, Jakarta",
+                        "contactEmail": "info@darussalam.org",
                         "contactPhone": "+62-21-5550199"
                     }
                     """.trimIndent()
                 )
         )
             .andExpect(status().isCreated)
-            .andExpect(header().string("Location", "/api/v1/tenants/sma-nusantara-1"))
-            .andExpect(jsonPath("$.tenantId").value("sma-nusantara-1"))
-            .andExpect(jsonPath("$.name").value("SMA Nusantara 1 Jakarta"))
+            .andExpect(header().string("Location", "/api/v1/tenants/yayasan-darussalam-01"))
+            .andExpect(jsonPath("$.tenantId").value("yayasan-darussalam-01"))
+            .andExpect(jsonPath("$.name").value("Yayasan Pendidikan Darussalam"))
     }
 
     @Test
     fun `should update tenant when payload is valid`() {
-        val updatedSchool = sampleSchool.updateProfile(
-            name = "SMA Nusantara 1 Jakarta Updated",
-            address = "Jl. Merdeka Baru No. 50",
-            contactEmail = "admin@smanusantara1.sch.id",
+        val updatedTenant = sampleTenant.updateProfile(
+            name = "Yayasan Pendidikan Darussalam Updated",
+            address = "Jl. Merdeka Baru No. 50, Jakarta",
+            contactEmail = "admin@darussalam.org",
             contactPhone = "+62-21-5550200",
-            status = SchoolStatus.ACTIVE
+            status = TenantStatus.ACTIVE
         )
-        every { updateTenantUseCase.updateTenant(tenantId, any()) } returns updatedSchool
+        every { updateTenantUseCase.updateTenant(tenantId, any()) } returns updatedTenant
 
         mockMvc.perform(
-            put("/api/v1/tenants/sma-nusantara-1")
+            put("/api/v1/tenants/yayasan-darussalam-01")
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(
                     """
                     {
-                        "name": "SMA Nusantara 1 Jakarta Updated",
-                        "address": "Jl. Merdeka Baru No. 50",
-                        "contactEmail": "admin@smanusantara1.sch.id",
+                        "name": "Yayasan Pendidikan Darussalam Updated",
+                        "address": "Jl. Merdeka Baru No. 50, Jakarta",
+                        "contactEmail": "admin@darussalam.org",
                         "contactPhone": "+62-21-5550200",
                         "status": "ACTIVE"
                     }
@@ -153,15 +155,15 @@ class TenantControllerTest {
                 )
         )
             .andExpect(status().isOk)
-            .andExpect(jsonPath("$.name").value("SMA Nusantara 1 Jakarta Updated"))
-            .andExpect(jsonPath("$.address").value("Jl. Merdeka Baru No. 50"))
+            .andExpect(jsonPath("$.name").value("Yayasan Pendidikan Darussalam Updated"))
+            .andExpect(jsonPath("$.address").value("Jl. Merdeka Baru No. 50, Jakarta"))
     }
 
     @Test
     fun `should delete tenant by tenant identifier`() {
         every { deleteTenantUseCase.deleteTenant(tenantId) } returns Unit
 
-        mockMvc.perform(delete("/api/v1/tenants/sma-nusantara-1"))
+        mockMvc.perform(delete("/api/v1/tenants/yayasan-darussalam-01"))
             .andExpect(status().isNoContent)
     }
 }

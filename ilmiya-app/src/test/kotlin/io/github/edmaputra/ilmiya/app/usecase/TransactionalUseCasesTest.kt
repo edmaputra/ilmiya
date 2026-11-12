@@ -1,9 +1,6 @@
 package io.github.edmaputra.ilmiya.app.usecase
 
-import io.github.edmaputra.ilmiya.academic.domain.AcademicTermId
 import io.github.edmaputra.ilmiya.academic.domain.AcademicTermType
-import io.github.edmaputra.ilmiya.academic.domain.AcademicYear
-import io.github.edmaputra.ilmiya.academic.domain.AcademicYearId
 import io.github.edmaputra.ilmiya.academic.domain.AcademicYearStatus
 import io.github.edmaputra.ilmiya.academic.domain.port.`in`.AddAcademicTermCommand
 import io.github.edmaputra.ilmiya.academic.domain.port.`in`.CreateAcademicYearCommand
@@ -11,22 +8,26 @@ import io.github.edmaputra.ilmiya.academic.domain.port.out.AcademicYearEventPubl
 import io.github.edmaputra.ilmiya.academic.domain.port.out.AcademicYearRepository
 import io.github.edmaputra.ilmiya.app.academic.TransactionalAcademicYearUseCase
 import io.github.edmaputra.ilmiya.app.school.TransactionalConfigureSchoolSettingsUseCase
-import io.github.edmaputra.ilmiya.app.school.TransactionalListTenantsUseCase
-import io.github.edmaputra.ilmiya.app.school.TransactionalManageTenantUseCase
+import io.github.edmaputra.ilmiya.app.school.TransactionalListSchoolsUseCase
 import io.github.edmaputra.ilmiya.app.school.TransactionalRegisterSchoolUseCase
 import io.github.edmaputra.ilmiya.app.school.TransactionalSchoolProfileUseCase
+import io.github.edmaputra.ilmiya.app.tenant.TransactionalListTenantsUseCase
+import io.github.edmaputra.ilmiya.app.tenant.TransactionalManageTenantUseCase
 import io.github.edmaputra.ilmiya.common.domain.TenantId
 import io.github.edmaputra.ilmiya.core.school.domain.GradingPreference
 import io.github.edmaputra.ilmiya.core.school.domain.School
-import io.github.edmaputra.ilmiya.core.school.domain.SchoolStatus
 import io.github.edmaputra.ilmiya.core.school.domain.TermLayout
 import io.github.edmaputra.ilmiya.core.school.domain.port.`in`.ConfigureSchoolSettingsCommand
-import io.github.edmaputra.ilmiya.core.school.domain.port.`in`.CreateTenantCommand
 import io.github.edmaputra.ilmiya.core.school.domain.port.`in`.RegisterSchoolCommand
 import io.github.edmaputra.ilmiya.core.school.domain.port.`in`.UpdateSchoolProfileCommand
-import io.github.edmaputra.ilmiya.core.school.domain.port.`in`.UpdateTenantCommand
 import io.github.edmaputra.ilmiya.core.school.domain.port.out.SchoolEventPublisher
 import io.github.edmaputra.ilmiya.core.school.domain.port.out.SchoolRepository
+import io.github.edmaputra.ilmiya.core.tenant.domain.Tenant
+import io.github.edmaputra.ilmiya.core.tenant.domain.TenantStatus
+import io.github.edmaputra.ilmiya.core.tenant.domain.port.`in`.CreateTenantCommand
+import io.github.edmaputra.ilmiya.core.tenant.domain.port.`in`.UpdateTenantCommand
+import io.github.edmaputra.ilmiya.core.tenant.domain.port.out.TenantEventPublisher
+import io.github.edmaputra.ilmiya.core.tenant.domain.port.out.TenantRepository
 import io.mockk.every
 import io.mockk.mockk
 import io.mockk.verify
@@ -42,6 +43,10 @@ class TransactionalUseCasesTest {
     // School mocks
     private val schoolRepository = mockk<SchoolRepository>()
     private val schoolEventPublisher = mockk<SchoolEventPublisher>(relaxed = true)
+
+    // Tenant mocks
+    private val tenantRepository = mockk<TenantRepository>()
+    private val tenantEventPublisher = mockk<TenantEventPublisher>(relaxed = true)
 
     // Academic year mocks
     private val academicYearRepository = mockk<AcademicYearRepository>()
@@ -102,29 +107,28 @@ class TransactionalUseCasesTest {
         val useCase = TransactionalConfigureSchoolSettingsUseCase(schoolRepository, schoolEventPublisher)
         val existingSchool = School.create(
             tenantId = tenantId,
-            name = "Test School",
-            institutionCode = "TS01",
-            address = "Jl. Test",
-            contactEmail = "admin@ts.sch.id",
-            contactPhone = "021-111111"
+            name = "Settings School",
+            institutionCode = "SS01",
+            address = "Jl. Settings",
+            contactEmail = "admin@ss.sch.id",
+            contactPhone = "021-444444"
         )
         existingSchool.pullDomainEvents()
-
-        val command = ConfigureSchoolSettingsCommand(
-            workingDays = setOf(DayOfWeek.MONDAY, DayOfWeek.TUESDAY),
-            gradingPreference = GradingPreference.LETTER_A_E,
-            termLayout = TermLayout.SEMESTER
-        )
 
         every { schoolRepository.findByTenantId(tenantId) } returns existingSchool
         every { schoolRepository.save(any()) } answers { firstArg() }
 
-        val result = useCase.configureSettings(tenantId, command)
-        assertThat(result.operationalSettings.termLayout).isEqualTo(TermLayout.SEMESTER)
+        val configureCommand = ConfigureSchoolSettingsCommand(
+            workingDays = setOf(DayOfWeek.MONDAY, DayOfWeek.TUESDAY, DayOfWeek.WEDNESDAY),
+            gradingPreference = GradingPreference.LETTER_A_E,
+            termLayout = TermLayout.TRIMESTER
+        )
+        val updated = useCase.configureSettings(tenantId, configureCommand)
+        assertThat(updated.operationalSettings.termLayout).isEqualTo(TermLayout.TRIMESTER)
     }
 
     @Test
-    fun `TransactionalAcademicYearUseCase should delegate all operations`() {
+    fun `TransactionalAcademicYearUseCase should delegate operations`() {
         val useCase = TransactionalAcademicYearUseCase(academicYearRepository, academicYearEventPublisher)
 
         val createCmd = CreateAcademicYearCommand(
@@ -173,8 +177,8 @@ class TransactionalUseCasesTest {
     }
 
     @Test
-    fun `TransactionalListTenantsUseCase should delegate listTenants`() {
-        val useCase = TransactionalListTenantsUseCase(schoolRepository)
+    fun `TransactionalListSchoolsUseCase should delegate listSchools`() {
+        val useCase = TransactionalListSchoolsUseCase(schoolRepository)
         val school = School.create(
             tenantId = tenantId,
             name = "Test School",
@@ -186,7 +190,7 @@ class TransactionalUseCasesTest {
         every { schoolRepository.findAll(0, 20) } returns listOf(school)
         every { schoolRepository.count() } returns 1L
 
-        val result = useCase.listTenants(0, 20)
+        val result = useCase.listSchools(0, 20)
 
         assertThat(result.content).hasSize(1)
         assertThat(result.content[0].name).isEqualTo("Test School")
@@ -196,53 +200,73 @@ class TransactionalUseCasesTest {
     }
 
     @Test
-    fun `TransactionalManageTenantUseCase should delegate CRUD operations`() {
-        val useCase = TransactionalManageTenantUseCase(schoolRepository, schoolEventPublisher)
-        val school = School.create(
+    fun `TransactionalListTenantsUseCase should delegate listTenants`() {
+        val useCase = TransactionalListTenantsUseCase(tenantRepository)
+        val tenant = Tenant.create(
             tenantId = tenantId,
-            name = "Test School",
-            institutionCode = "TS01",
+            name = "Test Foundation",
             address = "Jl. Test 1",
-            contactEmail = "admin@ts.sch.id",
+            contactEmail = "admin@tf.org",
+            contactPhone = "021-111111"
+        )
+        every { tenantRepository.findAll(0, 20) } returns listOf(tenant)
+        every { tenantRepository.count() } returns 1L
+
+        val result = useCase.listTenants(0, 20)
+
+        assertThat(result.content).hasSize(1)
+        assertThat(result.content[0].name).isEqualTo("Test Foundation")
+        assertThat(result.totalElements).isEqualTo(1L)
+        verify(exactly = 1) { tenantRepository.findAll(0, 20) }
+        verify(exactly = 1) { tenantRepository.count() }
+    }
+
+    @Test
+    fun `TransactionalManageTenantUseCase should delegate CRUD operations`() {
+        val useCase = TransactionalManageTenantUseCase(tenantRepository, tenantEventPublisher)
+        val tenant = Tenant.create(
+            tenantId = tenantId,
+            name = "Test Foundation",
+            address = "Jl. Test 1",
+            contactEmail = "admin@tf.org",
             contactPhone = "021-111111"
         )
 
         // Create
         val createCmd = CreateTenantCommand(
             tenantId = "tenant-01",
-            name = "Test School",
-            institutionCode = "TS01",
+            name = "Test Foundation",
             address = "Jl. Test 1",
-            contactEmail = "admin@ts.sch.id",
+            contactEmail = "admin@tf.org",
             contactPhone = "021-111111"
         )
-        every { schoolRepository.existsByInstitutionCode("TS01") } returns false
-        every { schoolRepository.existsByTenantId(tenantId) } returns false
-        every { schoolRepository.save(any()) } returns school
+        every { tenantRepository.existsById(tenantId) } returns false
+        every { tenantRepository.save(any()) } returns tenant
 
         val created = useCase.createTenant(createCmd)
-        assertThat(created.name).isEqualTo("Test School")
+        assertThat(created.name).isEqualTo("Test Foundation")
 
         // Get
-        every { schoolRepository.findByTenantId(tenantId) } returns school
+        every { tenantRepository.findById(tenantId) } returns tenant
         val fetched = useCase.getTenant(tenantId)
-        assertThat(fetched.name).isEqualTo("Test School")
+        assertThat(fetched.name).isEqualTo("Test Foundation")
 
         // Update
         val updateCmd = UpdateTenantCommand(
-            name = "Updated School",
+            name = "Updated Foundation",
             address = "Jl. Test 2",
-            contactEmail = "info@ts.sch.id",
+            contactEmail = "info@tf.org",
             contactPhone = "021-222222",
-            status = SchoolStatus.ACTIVE
+            status = TenantStatus.ACTIVE
         )
+        every { tenantRepository.save(any()) } returns tenant
         val updated = useCase.updateTenant(tenantId, updateCmd)
         assertThat(updated).isNotNull
 
         // Delete
-        every { schoolRepository.existsByTenantId(tenantId) } returns true
-        every { schoolRepository.deleteByTenantId(tenantId) } returns Unit
+        every { tenantRepository.existsById(tenantId) } returns true
+        every { tenantRepository.deleteById(tenantId) } returns Unit
         useCase.deleteTenant(tenantId)
-        verify(exactly = 1) { schoolRepository.deleteByTenantId(tenantId) }
+        verify(exactly = 1) { tenantRepository.deleteById(tenantId) }
     }
 }

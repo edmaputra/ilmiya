@@ -70,11 +70,29 @@ interface SchoolRepository {
     fun findAll(page: Int, size: Int): List<School>
 
     /**
+     * Retrieves a paginated list of schools belonging to a specific tenant.
+     *
+     * @param tenantId tenant identifier
+     * @param page zero-based page index
+     * @param size page size
+     * @return list of schools for the specified tenant and page
+     */
+    fun findAllByTenantId(tenantId: TenantId, page: Int, size: Int): List<School>
+
+    /**
      * Counts the total number of registered schools.
      *
      * @return total count of schools
      */
     fun count(): Long
+
+    /**
+     * Counts the total number of registered schools belonging to a specific tenant.
+     *
+     * @param tenantId tenant identifier
+     * @return total count of schools for the tenant
+     */
+    fun countByTenantId(tenantId: TenantId): Long
 
     /**
      * Deletes a school by its tenant identifier.

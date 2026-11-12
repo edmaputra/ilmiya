@@ -3,9 +3,29 @@ package io.github.edmaputra.ilmiya.app.event
 import io.github.edmaputra.ilmiya.academic.domain.port.out.AcademicYearEventPublisher
 import io.github.edmaputra.ilmiya.common.domain.DomainEvent
 import io.github.edmaputra.ilmiya.core.school.domain.port.out.SchoolEventPublisher
+import io.github.edmaputra.ilmiya.core.tenant.domain.port.out.TenantEventPublisher
 import org.slf4j.LoggerFactory
 import org.springframework.context.ApplicationEventPublisher
 import org.springframework.stereotype.Component
+
+/**
+ * Spring-backed event publisher adapter routing tenant foundation events to Spring's [ApplicationEventPublisher].
+ *
+ * @author edmaputra
+ * @since 0.0.1
+ */
+@Component
+class SpringTenantEventPublisher(
+    private val publisher: ApplicationEventPublisher
+) : TenantEventPublisher {
+
+    private val log = LoggerFactory.getLogger(SpringTenantEventPublisher::class.java)
+
+    override fun publish(event: DomainEvent) {
+        log.debug("Publishing tenant domain event: {}", event::class.simpleName)
+        publisher.publishEvent(event)
+    }
+}
 
 /**
  * Spring-backed event publisher adapter routing school events to Spring's [ApplicationEventPublisher].

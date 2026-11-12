@@ -7,7 +7,7 @@ import io.github.edmaputra.ilmiya.core.school.adapter.web.SchoolController
 import io.github.edmaputra.ilmiya.core.school.domain.School
 import io.github.edmaputra.ilmiya.core.school.domain.port.`in`.ConfigureSchoolSettingsUseCase
 import io.github.edmaputra.ilmiya.core.school.domain.port.`in`.GetSchoolProfileUseCase
-import io.github.edmaputra.ilmiya.core.school.domain.port.`in`.ListTenantsUseCase
+import io.github.edmaputra.ilmiya.core.school.domain.port.`in`.ListSchoolsUseCase
 import io.github.edmaputra.ilmiya.core.school.domain.port.`in`.RegisterSchoolUseCase
 import io.github.edmaputra.ilmiya.core.school.domain.port.`in`.UpdateSchoolProfileUseCase
 import io.mockk.every
@@ -48,7 +48,7 @@ class SchoolControllerTest {
     private lateinit var configureSchoolSettingsUseCase: ConfigureSchoolSettingsUseCase
 
     @MockkBean
-    private lateinit var listTenantsUseCase: ListTenantsUseCase
+    private lateinit var listSchoolsUseCase: ListSchoolsUseCase
 
     @Test
     fun `should list schools with default pagination`() {
@@ -66,7 +66,7 @@ class SchoolControllerTest {
             size = 20,
             totalElements = 1L
         )
-        every { listTenantsUseCase.listTenants(0, 20) } returns pageResponse
+        every { listSchoolsUseCase.listSchools(0, 20) } returns pageResponse
 
         mockMvc.perform(get("/api/v1/schools"))
             .andExpect(status().isOk)

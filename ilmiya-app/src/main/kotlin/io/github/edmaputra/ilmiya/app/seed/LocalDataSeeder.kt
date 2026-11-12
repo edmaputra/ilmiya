@@ -23,6 +23,9 @@ import io.github.edmaputra.ilmiya.core.school.domain.TermLayout
 import io.github.edmaputra.ilmiya.core.school.domain.port.`in`.RegisterSchoolCommand
 import io.github.edmaputra.ilmiya.core.school.domain.port.`in`.RegisterSchoolUseCase
 import io.github.edmaputra.ilmiya.core.school.domain.port.out.SchoolRepository
+import io.github.edmaputra.ilmiya.core.tenant.domain.port.`in`.CreateTenantCommand
+import io.github.edmaputra.ilmiya.core.tenant.domain.port.`in`.CreateTenantUseCase
+import io.github.edmaputra.ilmiya.core.tenant.domain.port.out.TenantRepository
 import io.github.edmaputra.ilmiya.core.security.IlmiyaPermissionCatalog
 import io.github.edmaputra.ilmiya.core.security.IlmiyaPermissions
 import io.github.edmaputra.ilmiya.core.security.IlmiyaRoles
@@ -48,6 +51,8 @@ import java.time.LocalDate
 @Profile("local", "dev", "standalone")
 @ConditionalOnProperty(name = ["ilmiya.seed.enabled"], havingValue = "true", matchIfMissing = true)
 class LocalDataSeeder(
+    private val tenantRepository: TenantRepository,
+    private val createTenantUseCase: CreateTenantUseCase,
     private val schoolRepository: SchoolRepository,
     private val registerSchoolUseCase: RegisterSchoolUseCase,
     private val createAcademicYearUseCase: CreateAcademicYearUseCase,
@@ -85,6 +90,22 @@ class LocalDataSeeder(
         }
 
         log.info("Starting local school domain data seeding for tenant '{}'...", tenantId.value)
+
+        // 0. Ensure Tenant Foundation exists
+        if (!tenantRepository.existsById(tenantId)) {
+            createTenantUseCase.createTenant(
+                CreateTenantCommand(
+                    tenantId = tenantId.value,
+                    name = "Springfield Education Foundation",
+                    legalEntityNumber = "SK-AHU-0012345.AH.01.04",
+                    registrationType = "FOUNDATION",
+                    address = "742 Evergreen Terrace, Springfield",
+                    contactEmail = ADMIN_EMAIL,
+                    contactPhone = "+1-555-0199"
+                )
+            )
+            log.info("Created seed tenant foundation for '{}'", tenantId.value)
+        }
 
         // 1. Register School
         val school = registerSchoolUseCase.register(

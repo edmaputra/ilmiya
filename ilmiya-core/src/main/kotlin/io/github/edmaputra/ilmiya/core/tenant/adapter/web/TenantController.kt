@@ -1,14 +1,14 @@
-package io.github.edmaputra.ilmiya.core.school.adapter.web
+package io.github.edmaputra.ilmiya.core.tenant.adapter.web
 
 import io.github.edmaputra.iam.domain.security.annotation.RequirePermission
 import io.github.edmaputra.ilmiya.common.domain.TenantId
 import io.github.edmaputra.ilmiya.common.dto.PageResponse
-import io.github.edmaputra.ilmiya.core.school.domain.port.`in`.CreateTenantUseCase
-import io.github.edmaputra.ilmiya.core.school.domain.port.`in`.DeleteTenantUseCase
-import io.github.edmaputra.ilmiya.core.school.domain.port.`in`.GetTenantUseCase
-import io.github.edmaputra.ilmiya.core.school.domain.port.`in`.ListTenantsUseCase
-import io.github.edmaputra.ilmiya.core.school.domain.port.`in`.UpdateTenantUseCase
 import io.github.edmaputra.ilmiya.core.security.IlmiyaPermissions
+import io.github.edmaputra.ilmiya.core.tenant.domain.port.`in`.CreateTenantUseCase
+import io.github.edmaputra.ilmiya.core.tenant.domain.port.`in`.DeleteTenantUseCase
+import io.github.edmaputra.ilmiya.core.tenant.domain.port.`in`.GetTenantUseCase
+import io.github.edmaputra.ilmiya.core.tenant.domain.port.`in`.ListTenantsUseCase
+import io.github.edmaputra.ilmiya.core.tenant.domain.port.`in`.UpdateTenantUseCase
 import jakarta.validation.Valid
 import org.springframework.http.ResponseEntity
 import org.springframework.web.bind.annotation.DeleteMapping
@@ -23,7 +23,7 @@ import org.springframework.web.bind.annotation.RestController
 import java.net.URI
 
 /**
- * REST controller exposing CRUD endpoints for managing registered tenants across the platform.
+ * REST controller exposing CRUD endpoints for managing registered tenant foundations across the platform.
  *
  * @author edmaputra
  * @since 0.0.1
@@ -39,7 +39,7 @@ class TenantController(
 ) {
 
     /**
-     * Lists registered tenants with pagination.
+     * Lists registered tenant foundations with pagination.
      */
     @GetMapping
     @RequirePermission(IlmiyaPermissions.TENANT_READ)
@@ -61,33 +61,33 @@ class TenantController(
     }
 
     /**
-     * Retrieves a single tenant by its tenant identifier.
+     * Retrieves a single tenant foundation by its identifier.
      */
     @GetMapping("/{tenantId}")
     @RequirePermission(IlmiyaPermissions.TENANT_READ)
     fun getTenant(
         @PathVariable tenantId: String
     ): ResponseEntity<TenantResponse> {
-        val school = getTenantUseCase.getTenant(TenantId.of(tenantId))
-        return ResponseEntity.ok(TenantResponse.from(school))
+        val tenant = getTenantUseCase.getTenant(TenantId.of(tenantId))
+        return ResponseEntity.ok(TenantResponse.from(tenant))
     }
 
     /**
-     * Creates and provisions a new tenant boundary and school institution.
+     * Creates and provisions a new tenant foundation boundary.
      */
     @PostMapping
     @RequirePermission(IlmiyaPermissions.TENANT_CREATE)
     fun createTenant(
         @Valid @RequestBody request: CreateTenantRequest
     ): ResponseEntity<TenantResponse> {
-        val school = createTenantUseCase.createTenant(request.toCommand())
-        val response = TenantResponse.from(school)
-        val location = URI.create("/api/v1/tenants/${school.tenantId.value}")
+        val tenant = createTenantUseCase.createTenant(request.toCommand())
+        val response = TenantResponse.from(tenant)
+        val location = URI.create("/api/v1/tenants/${tenant.id.value}")
         return ResponseEntity.created(location).body(response)
     }
 
     /**
-     * Updates an existing tenant profile.
+     * Updates an existing tenant foundation profile.
      */
     @PutMapping("/{tenantId}")
     @RequirePermission(IlmiyaPermissions.TENANT_UPDATE)
@@ -95,12 +95,12 @@ class TenantController(
         @PathVariable tenantId: String,
         @Valid @RequestBody request: UpdateTenantRequest
     ): ResponseEntity<TenantResponse> {
-        val school = updateTenantUseCase.updateTenant(TenantId.of(tenantId), request.toCommand())
-        return ResponseEntity.ok(TenantResponse.from(school))
+        val tenant = updateTenantUseCase.updateTenant(TenantId.of(tenantId), request.toCommand())
+        return ResponseEntity.ok(TenantResponse.from(tenant))
     }
 
     /**
-     * Deletes a tenant by its identifier.
+     * Deletes a tenant foundation boundary.
      */
     @DeleteMapping("/{tenantId}")
     @RequirePermission(IlmiyaPermissions.TENANT_DELETE)

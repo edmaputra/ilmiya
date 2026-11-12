@@ -76,7 +76,20 @@ class SchoolRepositoryAdapter(
             )
         ).content.map { toDomain(it) }
 
+    override fun findAllByTenantId(tenantId: TenantId, page: Int, size: Int): List<School> =
+        springDataRepository.findAllByTenantId(
+            tenantId.value,
+            org.springframework.data.domain.PageRequest.of(
+                page,
+                size,
+                org.springframework.data.domain.Sort.by("name").ascending()
+            )
+        ).content.map { toDomain(it) }
+
     override fun count(): Long = springDataRepository.count()
+
+    override fun countByTenantId(tenantId: TenantId): Long =
+        springDataRepository.countByTenantId(tenantId.value)
 
     override fun deleteByTenantId(tenantId: TenantId) {
         springDataRepository.findByTenantId(tenantId.value).ifPresent {
