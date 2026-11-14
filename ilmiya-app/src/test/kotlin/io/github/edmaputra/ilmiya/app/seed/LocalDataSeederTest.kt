@@ -31,6 +31,9 @@ import io.github.edmaputra.ilmiya.core.school.domain.port.`in`.RegisterSchoolCom
 import io.github.edmaputra.ilmiya.core.school.domain.port.`in`.RegisterSchoolUseCase
 import io.github.edmaputra.ilmiya.core.school.domain.port.out.SchoolRepository
 import io.github.edmaputra.ilmiya.core.security.IlmiyaRoles
+import io.github.edmaputra.ilmiya.core.tenant.domain.Tenant
+import io.github.edmaputra.ilmiya.core.tenant.domain.port.`in`.CreateTenantUseCase
+import io.github.edmaputra.ilmiya.core.tenant.domain.port.out.TenantRepository
 import io.mockk.every
 import io.mockk.mockk
 import io.mockk.verify
@@ -42,6 +45,8 @@ import java.util.UUID
 
 class LocalDataSeederTest {
 
+    private val tenantRepository = mockk<TenantRepository>()
+    private val createTenantUseCase = mockk<CreateTenantUseCase>()
     private val schoolRepository = mockk<SchoolRepository>()
     private val registerSchoolUseCase = mockk<RegisterSchoolUseCase>()
     private val createAcademicYearUseCase = mockk<CreateAcademicYearUseCase>()
@@ -61,6 +66,8 @@ class LocalDataSeederTest {
     @BeforeEach
     fun setUp() {
         seeder = LocalDataSeeder(
+            tenantRepository = tenantRepository,
+            createTenantUseCase = createTenantUseCase,
             schoolRepository = schoolRepository,
             registerSchoolUseCase = registerSchoolUseCase,
             createAcademicYearUseCase = createAcademicYearUseCase,
@@ -78,6 +85,16 @@ class LocalDataSeederTest {
     fun `should seed school, academic year, terms, and IAM data when absent`() {
         // Arrange - School & Academic
         every { schoolRepository.existsByTenantId(sampleTenantId) } returns false
+        every { tenantRepository.existsById(sampleTenantId) } returns false
+
+        val sampleTenant = Tenant.create(
+            tenantId = sampleTenantId,
+            name = "Springfield Education Foundation",
+            address = "742 Evergreen Terrace, Springfield",
+            contactEmail = LocalDataSeeder.ADMIN_EMAIL,
+            contactPhone = "+1-555-0199"
+        )
+        every { createTenantUseCase.createTenant(any()) } returns sampleTenant
 
         val sampleSchool = School(
             id = SchoolId.generate(),
@@ -177,6 +194,7 @@ class LocalDataSeederTest {
         seeder.run(mockk())
 
         // Assert
+        verify(exactly = 1) { createTenantUseCase.createTenant(match { it.tenantId == sampleTenantId.value }) }
         verify(exactly = 1) { registerSchoolUseCase.register(match { it.tenantId == sampleTenantId.value }) }
         verify(exactly = 1) { createAcademicYearUseCase.create(sampleTenantId, match { it.name == "2026/2027" }) }
         verify(exactly = 1) { activateAcademicYearUseCase.activate(sampleTenantId, sampleAcademicYear.id) }

@@ -13,6 +13,12 @@ interface SpringDataSchoolRepository : JpaRepository<SchoolJpaEntity, String> {
 
     fun findByTenantId(tenantId: String): Optional<SchoolJpaEntity>
 
+    fun findAllByTenantId(tenantId: String, pageable: org.springframework.data.domain.Pageable): org.springframework.data.domain.Page<SchoolJpaEntity>
+
+    fun findAllByTenantId(tenantId: String): List<SchoolJpaEntity>
+
+    fun countByTenantId(tenantId: String): Long
+
     fun findByInstitutionCode(institutionCode: String): Optional<SchoolJpaEntity>
 
     fun existsByInstitutionCode(institutionCode: String): Boolean

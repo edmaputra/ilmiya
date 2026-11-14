@@ -2,10 +2,11 @@ package io.github.edmaputra.ilmiya.core.school.adapter.web
 
 import io.github.edmaputra.iam.domain.security.annotation.RequirePermission
 import io.github.edmaputra.ilmiya.common.context.TenantContext
+import io.github.edmaputra.ilmiya.common.domain.TenantId
 import io.github.edmaputra.ilmiya.common.dto.PageResponse
 import io.github.edmaputra.ilmiya.core.school.domain.port.`in`.ConfigureSchoolSettingsUseCase
 import io.github.edmaputra.ilmiya.core.school.domain.port.`in`.GetSchoolProfileUseCase
-import io.github.edmaputra.ilmiya.core.school.domain.port.`in`.ListTenantsUseCase
+import io.github.edmaputra.ilmiya.core.school.domain.port.`in`.ListSchoolsUseCase
 import io.github.edmaputra.ilmiya.core.school.domain.port.`in`.RegisterSchoolUseCase
 import io.github.edmaputra.ilmiya.core.school.domain.port.`in`.UpdateSchoolProfileUseCase
 import io.github.edmaputra.ilmiya.core.security.IlmiyaPermissions
@@ -33,19 +34,25 @@ class SchoolController(
     private val getSchoolProfileUseCase: GetSchoolProfileUseCase,
     private val updateSchoolProfileUseCase: UpdateSchoolProfileUseCase,
     private val configureSchoolSettingsUseCase: ConfigureSchoolSettingsUseCase,
-    private val listTenantsUseCase: ListTenantsUseCase
+    private val listSchoolsUseCase: ListSchoolsUseCase
 ) {
 
     /**
-     * Lists registered schools and tenant boundaries with pagination.
+     * Lists registered schools with pagination, optionally filtered by tenant.
      */
     @GetMapping
     @RequirePermission(IlmiyaPermissions.SCHOOL_PROFILE_READ)
     fun listSchools(
+        @RequestParam(required = false) tenantId: String?,
         @RequestParam(defaultValue = "0") page: Int,
         @RequestParam(defaultValue = "20") size: Int
     ): ResponseEntity<PageResponse<SchoolResponse>> {
-        val result = listTenantsUseCase.listTenants(page, size)
+        val targetTenantId = tenantId?.takeIf { it.isNotBlank() } ?: TenantContext.getTenantId()?.value
+        val result = if (targetTenantId != null) {
+            listSchoolsUseCase.listSchoolsByTenant(TenantId.of(targetTenantId), page, size)
+        } else {
+            listSchoolsUseCase.listSchools(page, size)
+        }
         val response = PageResponse(
             content = result.content.map { SchoolResponse.from(it) },
             page = result.page,
@@ -59,7 +66,7 @@ class SchoolController(
     }
 
     /**
-     * Registers and provisions a new school and tenant boundary.
+     * Registers and provisions a new school institution under a tenant foundation.
      */
     @PostMapping
     @RequirePermission(IlmiyaPermissions.SCHOOL_REGISTER)

@@ -22,7 +22,7 @@ class SchoolJpaEntity(
     @Column(name = "id", length = 36, nullable = false)
     var id: String = "",
 
-    @Column(name = "tenant_id", length = 50, nullable = false, unique = true)
+    @Column(name = "tenant_id", length = 50, nullable = false)
     var tenantId: String = "",
 
     @Column(name = "name", length = 200, nullable = false)

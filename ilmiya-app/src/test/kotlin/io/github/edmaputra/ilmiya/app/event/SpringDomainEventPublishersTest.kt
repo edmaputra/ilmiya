@@ -30,4 +30,12 @@ class SpringDomainEventPublishersTest {
 
         verify(exactly = 1) { applicationEventPublisher.publishEvent(dummyEvent) }
     }
+
+    @Test
+    fun `SpringTenantEventPublisher should route event to ApplicationEventPublisher`() {
+        val publisher = SpringTenantEventPublisher(applicationEventPublisher)
+        publisher.publish(dummyEvent)
+
+        verify(exactly = 1) { applicationEventPublisher.publishEvent(dummyEvent) }
+    }
 }
