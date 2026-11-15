@@ -31,7 +31,6 @@ class RegisterSchoolServiceTest {
         )
 
         every { repository.existsByInstitutionCode("SMPN1") } returns false
-        every { repository.existsByTenantId(TenantId.of("tenant-sch-01")) } returns false
         every { repository.save(any<School>()) } answers { firstArg() }
 
         val result = service.register(command)
@@ -40,6 +39,39 @@ class RegisterSchoolServiceTest {
         assertThat(result.name).isEqualTo("SMP Negeri 1")
         verify(exactly = 1) { repository.save(any<School>()) }
         verify(atLeast = 1) { eventPublisher.publishAll(any()) }
+    }
+
+    @Test
+    fun `should successfully register multiple schools under the same tenant`() {
+        val command1 = RegisterSchoolCommand(
+            tenantId = "tenant-sch-01",
+            name = "SMP Negeri 1",
+            institutionCode = "SMPN1",
+            address = "Jl. Merdeka No. 1",
+            contactEmail = "admin@smpn1.sch.id",
+            contactPhone = "021-123456"
+        )
+        val command2 = RegisterSchoolCommand(
+            tenantId = "tenant-sch-01",
+            name = "SMA Negeri 1",
+            institutionCode = "SMAN1",
+            address = "Jl. Merdeka No. 2",
+            contactEmail = "admin@sman1.sch.id",
+            contactPhone = "021-123457"
+        )
+
+        every { repository.existsByInstitutionCode("SMPN1") } returns false
+        every { repository.existsByInstitutionCode("SMAN1") } returns false
+        every { repository.save(any<School>()) } answers { firstArg() }
+
+        val result1 = service.register(command1)
+        val result2 = service.register(command2)
+
+        assertThat(result1.tenantId.value).isEqualTo("tenant-sch-01")
+        assertThat(result2.tenantId.value).isEqualTo("tenant-sch-01")
+        assertThat(result1.institutionCode).isEqualTo("SMPN1")
+        assertThat(result2.institutionCode).isEqualTo("SMAN1")
+        verify(exactly = 2) { repository.save(any<School>()) }
     }
 
     @Test
