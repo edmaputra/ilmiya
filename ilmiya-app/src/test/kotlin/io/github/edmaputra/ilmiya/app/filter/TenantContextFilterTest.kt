@@ -16,7 +16,7 @@ class TenantContextFilterTest {
     @Test
     fun `should bind tenant context when header is present`() {
         val request = MockHttpServletRequest()
-        request.addHeader("X-Tenant-ID", "tenant-123")
+        request.addHeader("X-Tenant-ID", "00000000-0000-0000-0000-000000000001")
         val response = MockHttpServletResponse()
 
         var contextBoundInsideChain = false
@@ -30,7 +30,7 @@ class TenantContextFilterTest {
         filter.doFilter(request, response, filterChain)
 
         assertThat(contextBoundInsideChain).isTrue()
-        assertThat(boundTenantId).isEqualTo("tenant-123")
+        assertThat(boundTenantId).isEqualTo("00000000-0000-0000-0000-000000000001")
         // Once exited, context should be unbound
         assertThat(TenantContext.isBound()).isFalse()
     }

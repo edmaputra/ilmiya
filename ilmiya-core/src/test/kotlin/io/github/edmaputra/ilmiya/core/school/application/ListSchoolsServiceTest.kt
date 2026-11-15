@@ -13,7 +13,7 @@ class ListSchoolsServiceTest {
     private val schoolRepository = mockk<SchoolRepository>()
     private val service = ListSchoolsService(schoolRepository)
 
-    private val tenantId = TenantId.of("yayasan-01")
+    private val tenantId = TenantId.of("00000000-0000-0000-0000-000000000001")
     private val school = School.create(
         tenantId = tenantId,
         name = "SMA Islam Al-Azhar 1",

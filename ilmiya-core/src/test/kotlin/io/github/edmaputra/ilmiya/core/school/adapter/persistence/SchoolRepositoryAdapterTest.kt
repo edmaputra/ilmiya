@@ -24,7 +24,7 @@ class SchoolRepositoryAdapterTest {
     private val springDataRepository = mockk<SpringDataSchoolRepository>()
     private val adapter = SchoolRepositoryAdapter(springDataRepository)
 
-    private val tenantId = TenantId.of("tenant-01")
+    private val tenantId = TenantId.of("00000000-0000-0000-0000-000000000001")
     private val schoolId = SchoolId.of("sch-01")
 
     private val sampleDomainSchool = School(

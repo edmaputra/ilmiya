@@ -54,7 +54,7 @@ class AcademicYearControllerTest {
     @MockkBean
     private lateinit var activateAcademicTermUseCase: ActivateAcademicTermUseCase
 
-    private val tenantId = TenantId.of("tenant-sch-01")
+    private val tenantId = TenantId.of("00000000-0000-0000-0000-000000000001")
 
     @Test
     fun `should create academic year when payload is valid`() {
@@ -69,7 +69,7 @@ class AcademicYearControllerTest {
 
         mockMvc.perform(
             post("/api/v1/academic-years")
-                .header("X-Tenant-ID", "tenant-sch-01")
+                .header("X-Tenant-ID", "00000000-0000-0000-0000-000000000001")
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(
                     """
@@ -101,7 +101,7 @@ class AcademicYearControllerTest {
 
         mockMvc.perform(
             post("/api/v1/academic-years/year-123/terms")
-                .header("X-Tenant-ID", "tenant-sch-01")
+                .header("X-Tenant-ID", "00000000-0000-0000-0000-000000000001")
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(
                     """
@@ -133,7 +133,7 @@ class AcademicYearControllerTest {
 
         mockMvc.perform(
             get("/api/v1/academic-years")
-                .header("X-Tenant-ID", "tenant-sch-01")
+                .header("X-Tenant-ID", "00000000-0000-0000-0000-000000000001")
         )
             .andExpect(status().isOk)
             .andExpect(jsonPath("$[0].name").value("2026/2027"))
@@ -152,7 +152,7 @@ class AcademicYearControllerTest {
 
         mockMvc.perform(
             get("/api/v1/academic-years/active")
-                .header("X-Tenant-ID", "tenant-sch-01")
+                .header("X-Tenant-ID", "00000000-0000-0000-0000-000000000001")
         )
             .andExpect(status().isOk)
             .andExpect(jsonPath("$.name").value("2026/2027"))
@@ -164,7 +164,7 @@ class AcademicYearControllerTest {
 
         mockMvc.perform(
             get("/api/v1/academic-years/active")
-                .header("X-Tenant-ID", "tenant-sch-01")
+                .header("X-Tenant-ID", "00000000-0000-0000-0000-000000000001")
         )
             .andExpect(status().isNotFound)
     }
@@ -182,7 +182,7 @@ class AcademicYearControllerTest {
 
         mockMvc.perform(
             get("/api/v1/academic-years/year-123")
-                .header("X-Tenant-ID", "tenant-sch-01")
+                .header("X-Tenant-ID", "00000000-0000-0000-0000-000000000001")
         )
             .andExpect(status().isOk)
             .andExpect(jsonPath("$.id").value("year-123"))
@@ -201,7 +201,7 @@ class AcademicYearControllerTest {
 
         mockMvc.perform(
             put("/api/v1/academic-years/year-123/activate")
-                .header("X-Tenant-ID", "tenant-sch-01")
+                .header("X-Tenant-ID", "00000000-0000-0000-0000-000000000001")
         )
             .andExpect(status().isOk)
             .andExpect(jsonPath("$.id").value("year-123"))
@@ -221,7 +221,7 @@ class AcademicYearControllerTest {
 
         mockMvc.perform(
             put("/api/v1/academic-years/year-123/terms/term-1/activate")
-                .header("X-Tenant-ID", "tenant-sch-01")
+                .header("X-Tenant-ID", "00000000-0000-0000-0000-000000000001")
         )
             .andExpect(status().isOk)
             .andExpect(jsonPath("$.id").value("term-1"))

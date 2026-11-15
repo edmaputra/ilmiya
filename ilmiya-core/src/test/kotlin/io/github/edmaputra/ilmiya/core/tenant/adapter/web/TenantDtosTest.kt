@@ -12,8 +12,9 @@ class TenantDtosTest {
     @Test
     fun `TenantResponse from should correctly map all fields from Tenant domain entity`() {
         val now = Instant.parse("2026-09-26T00:00:00Z")
+        val tenantUuid = "00000000-0000-0000-0000-000000000001"
         val tenant = Tenant(
-            id = TenantId.of("tenant-abc"),
+            id = TenantId.of(tenantUuid),
             name = "Test Foundation",
             legalEntityNumber = "AHU-999",
             registrationType = "YAYASAN",
@@ -28,8 +29,8 @@ class TenantDtosTest {
 
         val response = TenantResponse.from(tenant)
 
-        assertThat(response.id).isEqualTo("tenant-abc")
-        assertThat(response.tenantId).isEqualTo("tenant-abc")
+        assertThat(response.id).isEqualTo(tenantUuid)
+        assertThat(response.tenantId).isEqualTo(tenantUuid)
         assertThat(response.name).isEqualTo("Test Foundation")
         assertThat(response.legalEntityNumber).isEqualTo("AHU-999")
         assertThat(response.registrationType).isEqualTo("YAYASAN")
@@ -45,7 +46,6 @@ class TenantDtosTest {
     @Test
     fun `CreateTenantRequest toCommand should map fields correctly`() {
         val request = CreateTenantRequest(
-            tenantId = "tenant-req-01",
             name = "Request Foundation",
             legalEntityNumber = "LEGAL-01",
             registrationType = "YAYASAN",
@@ -55,7 +55,7 @@ class TenantDtosTest {
         )
         val cmd = request.toCommand()
 
-        assertThat(cmd.tenantId).isEqualTo("tenant-req-01")
+        assertThat(cmd.tenantId).isNull()
         assertThat(cmd.name).isEqualTo("Request Foundation")
         assertThat(cmd.legalEntityNumber).isEqualTo("LEGAL-01")
         assertThat(cmd.registrationType).isEqualTo("YAYASAN")

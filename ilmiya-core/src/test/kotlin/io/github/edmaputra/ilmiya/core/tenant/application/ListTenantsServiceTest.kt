@@ -16,7 +16,7 @@ class ListTenantsServiceTest {
     @Test
     fun `listTenants should query repository and return paginated tenants`() {
         val tenant = Tenant.create(
-            tenantId = TenantId.of("yayasan-01"),
+            tenantId = TenantId.of("00000000-0000-0000-0000-000000000001"),
             name = "Yayasan Pendidikan Al-Azhar",
             address = "Jl. Sisingamangaraja",
             contactEmail = "admin@alazhar.org",

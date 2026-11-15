@@ -14,9 +14,6 @@ import jakarta.validation.constraints.NotBlank
  * @since 0.0.1
  */
 data class CreateTenantRequest(
-    @field:NotBlank(message = "Tenant ID is required")
-    val tenantId: String,
-
     @field:NotBlank(message = "Tenant/Foundation name is required")
     val name: String,
 
@@ -36,7 +33,6 @@ data class CreateTenantRequest(
     val logoUrl: String? = null
 ) {
     fun toCommand(): CreateTenantCommand = CreateTenantCommand(
-        tenantId = tenantId,
         name = name,
         legalEntityNumber = legalEntityNumber,
         registrationType = registrationType,

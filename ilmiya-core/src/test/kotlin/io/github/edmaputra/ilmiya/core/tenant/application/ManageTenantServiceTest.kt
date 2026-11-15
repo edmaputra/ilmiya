@@ -22,12 +22,13 @@ class ManageTenantServiceTest {
     private val eventPublisher = mockk<TenantEventPublisher>(relaxed = true)
     private val service = ManageTenantService(tenantRepository, eventPublisher)
 
-    private val tenantId = TenantId.of("yayasan-manage-01")
+    private val tenantUuid = "00000000-0000-0000-0000-000000000001"
+    private val tenantId = TenantId.of(tenantUuid)
 
     @Test
-    fun `createTenant should validate uniqueness, save tenant, publish events, and return result`() {
+    fun `createTenant should validate uniqueness, save tenant, publish events, and return result with explicit tenantId`() {
         val command = CreateTenantCommand(
-            tenantId = "yayasan-manage-01",
+            tenantId = tenantUuid,
             name = "Yayasan Pendidikan Al-Azhar",
             legalEntityNumber = "SK-001",
             registrationType = "YAYASAN",
@@ -49,9 +50,29 @@ class ManageTenantServiceTest {
     }
 
     @Test
+    fun `createTenant should auto-generate valid UUID when tenantId is null`() {
+        val command = CreateTenantCommand(
+            name = "Yayasan Tanpa Custom ID",
+            address = "Jl. Sudirman",
+            contactEmail = "admin@auto.org",
+            contactPhone = "021-999999"
+        )
+
+        every { tenantRepository.existsById(any()) } returns false
+        every { tenantRepository.save(any()) } answers { firstArg() }
+
+        val created = service.createTenant(command)
+
+        assertThat(created.id.value).isNotBlank()
+        assertThat(runCatching { java.util.UUID.fromString(created.id.value) }.isSuccess).isTrue()
+        assertThat(created.name).isEqualTo("Yayasan Tanpa Custom ID")
+        verify(exactly = 1) { tenantRepository.save(any()) }
+    }
+
+    @Test
     fun `createTenant should throw DuplicateTenantException when tenantId exists`() {
         val command = CreateTenantCommand(
-            tenantId = "yayasan-manage-01",
+            tenantId = tenantUuid,
             name = "Yayasan Al-Azhar",
             address = "Jl. Raya 1",
             contactEmail = "admin@alazhar.org",
@@ -61,7 +82,7 @@ class ManageTenantServiceTest {
 
         assertThatThrownBy { service.createTenant(command) }
             .isInstanceOf(DuplicateTenantException::class.java)
-            .hasMessageContaining("A tenant with ID 'yayasan-manage-01' already exists.")
+            .hasMessageContaining("A tenant with ID '$tenantUuid' already exists.")
     }
 
     @Test
@@ -85,7 +106,7 @@ class ManageTenantServiceTest {
 
         assertThatThrownBy { service.getTenant(tenantId) }
             .isInstanceOf(TenantNotFoundException::class.java)
-            .hasMessageContaining("Tenant 'yayasan-manage-01' was not found.")
+            .hasMessageContaining("Tenant '$tenantUuid' was not found.")
     }
 
     @Test

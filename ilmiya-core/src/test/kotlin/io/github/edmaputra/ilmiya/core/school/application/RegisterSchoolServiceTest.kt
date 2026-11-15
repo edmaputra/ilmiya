@@ -22,7 +22,7 @@ class RegisterSchoolServiceTest {
     @Test
     fun `should successfully register school when valid and code is unique`() {
         val command = RegisterSchoolCommand(
-            tenantId = "tenant-sch-01",
+            tenantId = "00000000-0000-0000-0000-000000000001",
             name = "SMP Negeri 1",
             institutionCode = "SMPN1",
             address = "Jl. Merdeka No. 1",
@@ -44,7 +44,7 @@ class RegisterSchoolServiceTest {
     @Test
     fun `should successfully register multiple schools under the same tenant`() {
         val command1 = RegisterSchoolCommand(
-            tenantId = "tenant-sch-01",
+            tenantId = "00000000-0000-0000-0000-000000000001",
             name = "SMP Negeri 1",
             institutionCode = "SMPN1",
             address = "Jl. Merdeka No. 1",
@@ -52,7 +52,7 @@ class RegisterSchoolServiceTest {
             contactPhone = "021-123456"
         )
         val command2 = RegisterSchoolCommand(
-            tenantId = "tenant-sch-01",
+            tenantId = "00000000-0000-0000-0000-000000000001",
             name = "SMA Negeri 1",
             institutionCode = "SMAN1",
             address = "Jl. Merdeka No. 2",
@@ -67,8 +67,8 @@ class RegisterSchoolServiceTest {
         val result1 = service.register(command1)
         val result2 = service.register(command2)
 
-        assertThat(result1.tenantId.value).isEqualTo("tenant-sch-01")
-        assertThat(result2.tenantId.value).isEqualTo("tenant-sch-01")
+        assertThat(result1.tenantId.value).isEqualTo("00000000-0000-0000-0000-000000000001")
+        assertThat(result2.tenantId.value).isEqualTo("00000000-0000-0000-0000-000000000001")
         assertThat(result1.institutionCode).isEqualTo("SMPN1")
         assertThat(result2.institutionCode).isEqualTo("SMAN1")
         verify(exactly = 2) { repository.save(any<School>()) }
@@ -77,7 +77,7 @@ class RegisterSchoolServiceTest {
     @Test
     fun `should throw DuplicateInstitutionCodeException when code already exists`() {
         val command = RegisterSchoolCommand(
-            tenantId = "tenant-sch-02",
+            tenantId = "00000000-0000-0000-0000-000000000002",
             name = "SMP Negeri 2",
             institutionCode = "SMPN1",
             address = "Jl. Merdeka No. 2",
