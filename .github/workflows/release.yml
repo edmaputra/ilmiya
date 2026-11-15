@@ -1,20 +1,47 @@
-name: Release Please
+name: Release
 
 on:
   push:
-    branches:
-      - main
+    tags:
+      - 'v*.*.*'
 
 permissions:
   contents: write
-  pull-requests: write
 
 jobs:
-  release-please:
+  release:
+    name: Build & GitHub Release
     runs-on: ubuntu-latest
     steps:
-      - uses: googleapis/release-please-action@v4
-        id: release
+      - name: Checkout code
+        uses: actions/checkout@v7
         with:
-          config-file: release-please-config.json
-          manifest-file: .release-please-manifest.json
+          fetch-depth: 0
+          submodules: recursive
+
+      - name: Set up Java 25 (temurin)
+        uses: actions/setup-java@v5
+        with:
+          java-version: '25'
+          distribution: 'temurin'
+          cache: 'gradle'
+
+      - name: Make Gradle Wrapper executable
+        run: chmod +x gradlew
+
+      - name: Extract Tag Version
+        id: version
+        run: |
+          VERSION="${GITHUB_REF_NAME#v}"
+          echo "VERSION=${VERSION}" >> "$GITHUB_OUTPUT"
+
+      - name: Build with Gradle
+        run: ./gradlew build -Pversion=${{ steps.version.outputs.VERSION }}
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          name: Release v${{ steps.version.outputs.VERSION }}
+          generate_release_notes: true
+          draft: false
+          prerelease: false
