@@ -4,6 +4,7 @@ plugins {
 
 springBoot {
     mainClass.set("io.github.edmaputra.ilmiya.IlmiyaApplicationKt")
+    buildInfo()
 }
 
 

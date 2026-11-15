@@ -5,6 +5,8 @@ import io.swagger.v3.oas.models.OpenAPI
 import io.swagger.v3.oas.models.info.Info
 import io.swagger.v3.oas.models.security.SecurityRequirement
 import io.swagger.v3.oas.models.security.SecurityScheme
+import org.springframework.beans.factory.annotation.Autowired
+import org.springframework.boot.info.BuildProperties
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
 
@@ -18,20 +20,25 @@ import org.springframework.context.annotation.Configuration
  * @since 0.0.1
  */
 @Configuration(proxyBeanMethods = false)
-class OpenApiConfig {
+class OpenApiConfig(
+    @Autowired(required = false)
+    private val buildProperties: BuildProperties? = null
+) {
 
     companion object {
         const val SECURITY_SCHEME_NAME = "BearerAuth"
+        const val DEFAULT_VERSION = "0.1.0"
     }
 
     @Bean
     fun customOpenAPI(): OpenAPI {
+        val appVersion = buildProperties?.version ?: DEFAULT_VERSION
         return OpenAPI()
             .info(
                 Info()
                     .title("Ilmiya API")
                     .description("API documentation for Ilmiya School Management System")
-                    .version("0.0.1")
+                    .version(appVersion)
             )
             .addSecurityItem(SecurityRequirement().addList(SECURITY_SCHEME_NAME))
             .components(

@@ -10,7 +10,7 @@ plugins {
 
 allprojects {
     group = "io.github.edmaputra.ilmiya"
-    version = "0.0.1-SNAPSHOT"
+    version = (findProperty("version") as? String) ?: "0.1.0"
 
     repositories {
         mavenLocal()
