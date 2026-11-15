@@ -28,9 +28,6 @@ class RegisterSchoolService(
         }
 
         val tenantId = TenantId.of(command.tenantId)
-        if (schoolRepository.existsByTenantId(tenantId)) {
-            throw DuplicateInstitutionCodeException("A school with tenant ID '${tenantId.value}' already exists.")
-        }
 
         val school = School.create(
             tenantId = tenantId,
