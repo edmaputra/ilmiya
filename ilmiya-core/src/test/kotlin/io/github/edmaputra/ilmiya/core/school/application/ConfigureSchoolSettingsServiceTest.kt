@@ -22,7 +22,7 @@ class ConfigureSchoolSettingsServiceTest {
     private val eventPublisher = mockk<SchoolEventPublisher>(relaxed = true)
     private val service = ConfigureSchoolSettingsService(repository, eventPublisher)
 
-    private val tenantId = TenantId.of("tenant-sch-01")
+    private val tenantId = TenantId.of("00000000-0000-0000-0000-000000000001")
 
     @Test
     fun `should successfully configure school settings`() {
@@ -69,7 +69,7 @@ class ConfigureSchoolSettingsServiceTest {
 
         assertThatThrownBy { service.configureSettings(tenantId, command) }
             .isInstanceOf(SchoolNotFoundException::class.java)
-            .hasMessageContaining("School profile for tenant 'tenant-sch-01' was not found.")
+            .hasMessageContaining("School profile for tenant '${tenantId.value}' was not found.")
     }
 
     @Test

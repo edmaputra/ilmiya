@@ -9,7 +9,7 @@ import java.time.LocalDate
 
 class AcademicYearTest {
 
-    private val tenantId = TenantId.of("tenant-sch-01")
+    private val tenantId = TenantId.of("00000000-0000-0000-0000-000000000001")
 
     @Test
     fun `should create academic year aggregate successfully`() {

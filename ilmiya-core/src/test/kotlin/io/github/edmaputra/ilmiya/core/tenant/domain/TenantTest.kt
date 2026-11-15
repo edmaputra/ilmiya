@@ -7,7 +7,7 @@ import org.junit.jupiter.api.Test
 
 class TenantTest {
 
-    private val tenantId = TenantId.of("yayasan-01")
+    private val tenantId = TenantId.of("00000000-0000-0000-0000-000000000001")
 
     @Test
     fun `create should initialize tenant and register TenantCreatedEvent`() {

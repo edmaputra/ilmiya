@@ -18,7 +18,7 @@ class SchoolProfileServiceTest {
     private val repository = mockk<SchoolRepository>()
     private val eventPublisher = mockk<SchoolEventPublisher>(relaxed = true)
     private val service = SchoolProfileService(repository, eventPublisher)
-    private val tenantId = TenantId.of("tenant-sch-01")
+    private val tenantId = TenantId.of("00000000-0000-0000-0000-000000000001")
 
     @Test
     fun `should return profile when found`() {

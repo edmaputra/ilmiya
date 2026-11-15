@@ -7,12 +7,12 @@ package io.github.edmaputra.ilmiya.core.tenant.domain.port.`in`
  * @since 0.0.1
  */
 data class CreateTenantCommand(
-    val tenantId: String,
     val name: String,
     val legalEntityNumber: String? = null,
     val registrationType: String? = null,
     val address: String,
     val contactEmail: String,
     val contactPhone: String,
-    val logoUrl: String? = null
+    val logoUrl: String? = null,
+    val tenantId: String? = null
 )

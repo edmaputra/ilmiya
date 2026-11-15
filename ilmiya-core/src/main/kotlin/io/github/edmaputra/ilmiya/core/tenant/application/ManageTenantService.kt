@@ -27,7 +27,11 @@ class ManageTenantService(
 ) : CreateTenantUseCase, GetTenantUseCase, UpdateTenantUseCase, DeleteTenantUseCase {
 
     override fun createTenant(command: CreateTenantCommand): Tenant {
-        val tenantId = TenantId.of(command.tenantId.trim())
+        val tenantId = if (!command.tenantId.isNullOrBlank()) {
+            TenantId.of(command.tenantId.trim())
+        } else {
+            TenantId.generate()
+        }
         if (tenantRepository.existsById(tenantId)) {
             throw DuplicateTenantException("A tenant with ID '${tenantId.value}' already exists.")
         }

@@ -9,7 +9,7 @@ import java.time.LocalDate
 
 class SchoolTest {
 
-    private val tenantId = TenantId.of("tenant-sch-01")
+    private val tenantId = TenantId.of("00000000-0000-0000-0000-000000000001")
 
     @Test
     fun `should successfully create a valid school aggregate`() {

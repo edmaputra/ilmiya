@@ -23,7 +23,7 @@ class AcademicYearRepositoryAdapterTest {
     private val springDataRepository = mockk<SpringDataAcademicYearRepository>()
     private val adapter = AcademicYearRepositoryAdapter(springDataRepository)
 
-    private val tenantId = TenantId.of("tenant-01")
+    private val tenantId = TenantId.of("00000000-0000-0000-0000-000000000001")
     private val yearId = AcademicYearId.of("ay-01")
     private val termId = AcademicTermId.of("term-01")
 

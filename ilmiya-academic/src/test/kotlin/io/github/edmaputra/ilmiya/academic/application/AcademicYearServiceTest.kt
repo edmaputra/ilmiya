@@ -23,7 +23,7 @@ class AcademicYearServiceTest {
     private val repository = mockk<AcademicYearRepository>()
     private val eventPublisher = mockk<AcademicYearEventPublisher>(relaxed = true)
     private val service = AcademicYearService(repository, eventPublisher)
-    private val tenantId = TenantId.of("tenant-sch-01")
+    private val tenantId = TenantId.of("00000000-0000-0000-0000-000000000001")
 
     @Test
     fun `should create academic year when name is unique`() {

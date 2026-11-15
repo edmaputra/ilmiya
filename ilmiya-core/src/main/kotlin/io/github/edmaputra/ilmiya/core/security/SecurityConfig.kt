@@ -82,6 +82,7 @@ class SecurityConfig(
                         // Actuator health check
                         "/actuator/**"
                     ).permitAll()
+                    .requestMatchers("/api/v1/tenants/**").hasRole("SUPERADMIN")
                     .anyRequest().authenticated()
             }
             .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter::class.java)
@@ -116,8 +117,11 @@ class SecurityConfig(
             filterChain: FilterChain
         ) {
             currentActorProvider.currentActor().ifPresent { actor ->
-                val authorities = actor.permissions().map { SimpleGrantedAuthority(it) } +
-                    actor.roles().map { SimpleGrantedAuthority("ROLE_$it") }
+                val authorities = (actor.permissions().map { SimpleGrantedAuthority(it) } +
+                    actor.roles().map { SimpleGrantedAuthority("ROLE_$it") }).toMutableList()
+                if (actor.isPlatformSuperAdmin) {
+                    authorities.add(SimpleGrantedAuthority("ROLE_SUPERADMIN"))
+                }
                 val auth = UsernamePasswordAuthenticationToken(actor.email(), null, authorities)
                 SecurityContextHolder.getContext().authentication = auth
             }

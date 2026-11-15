@@ -16,6 +16,10 @@ import org.junit.jupiter.api.Test
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.webmvc.test.autoconfigure.WebMvcTest
 import org.springframework.http.MediaType
+import org.springframework.context.annotation.Import
+import org.springframework.boot.test.context.TestConfiguration
+import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity
+import org.springframework.security.test.context.support.WithMockUser
 import org.springframework.test.web.servlet.MockMvc
 import org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete
 import org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get
@@ -32,7 +36,13 @@ import org.springframework.test.web.servlet.result.MockMvcResultMatchers.status
  * @since 0.0.1
  */
 @WebMvcTest(TenantController::class)
+@Import(TenantControllerTest.TestSecurityConfig::class)
+@WithMockUser(roles = ["SUPERADMIN"])
 class TenantControllerTest {
+
+    @TestConfiguration
+    @EnableMethodSecurity
+    class TestSecurityConfig
 
     @Autowired
     private lateinit var mockMvc: MockMvc
@@ -52,7 +62,8 @@ class TenantControllerTest {
     @MockkBean
     private lateinit var deleteTenantUseCase: DeleteTenantUseCase
 
-    private val tenantId = TenantId.of("yayasan-darussalam-01")
+    private val tenantUuid = "00000000-0000-0000-0000-000000000001"
+    private val tenantId = TenantId.of(tenantUuid)
 
     private val sampleTenant = Tenant.create(
         tenantId = tenantId,
@@ -78,7 +89,7 @@ class TenantControllerTest {
         mockMvc.perform(get("/api/v1/tenants"))
             .andExpect(status().isOk)
             .andExpect(jsonPath("$.content").isArray)
-            .andExpect(jsonPath("$.content[0].tenantId").value("yayasan-darussalam-01"))
+            .andExpect(jsonPath("$.content[0].tenantId").value(tenantUuid))
             .andExpect(jsonPath("$.content[0].name").value("Yayasan Pendidikan Darussalam"))
             .andExpect(jsonPath("$.content[0].legalEntityNumber").value("SK-AHU-0012345"))
             .andExpect(jsonPath("$.page").value(0))
@@ -93,9 +104,9 @@ class TenantControllerTest {
     fun `should get tenant by tenant identifier`() {
         every { getTenantUseCase.getTenant(tenantId) } returns sampleTenant
 
-        mockMvc.perform(get("/api/v1/tenants/yayasan-darussalam-01"))
+        mockMvc.perform(get("/api/v1/tenants/$tenantUuid"))
             .andExpect(status().isOk)
-            .andExpect(jsonPath("$.tenantId").value("yayasan-darussalam-01"))
+            .andExpect(jsonPath("$.tenantId").value(tenantUuid))
             .andExpect(jsonPath("$.name").value("Yayasan Pendidikan Darussalam"))
             .andExpect(jsonPath("$.legalEntityNumber").value("SK-AHU-0012345"))
             .andExpect(jsonPath("$.status").value("ACTIVE"))
@@ -111,7 +122,6 @@ class TenantControllerTest {
                 .content(
                     """
                     {
-                        "tenantId": "yayasan-darussalam-01",
                         "name": "Yayasan Pendidikan Darussalam",
                         "legalEntityNumber": "SK-AHU-0012345",
                         "registrationType": "YAYASAN",
@@ -123,8 +133,8 @@ class TenantControllerTest {
                 )
         )
             .andExpect(status().isCreated)
-            .andExpect(header().string("Location", "/api/v1/tenants/yayasan-darussalam-01"))
-            .andExpect(jsonPath("$.tenantId").value("yayasan-darussalam-01"))
+            .andExpect(header().string("Location", "/api/v1/tenants/$tenantUuid"))
+            .andExpect(jsonPath("$.tenantId").value(tenantUuid))
             .andExpect(jsonPath("$.name").value("Yayasan Pendidikan Darussalam"))
     }
 
@@ -140,7 +150,7 @@ class TenantControllerTest {
         every { updateTenantUseCase.updateTenant(tenantId, any()) } returns updatedTenant
 
         mockMvc.perform(
-            put("/api/v1/tenants/yayasan-darussalam-01")
+            put("/api/v1/tenants/$tenantUuid")
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(
                     """
@@ -163,7 +173,14 @@ class TenantControllerTest {
     fun `should delete tenant by tenant identifier`() {
         every { deleteTenantUseCase.deleteTenant(tenantId) } returns Unit
 
-        mockMvc.perform(delete("/api/v1/tenants/yayasan-darussalam-01"))
+        mockMvc.perform(delete("/api/v1/tenants/$tenantUuid"))
             .andExpect(status().isNoContent)
+    }
+
+    @Test
+    @WithMockUser(roles = ["SCHOOL_ADMIN"])
+    fun `should deny access to tenant management for school admin`() {
+        mockMvc.perform(get("/api/v1/tenants"))
+            .andExpect(status().isForbidden)
     }
 }

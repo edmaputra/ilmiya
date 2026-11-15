@@ -13,11 +13,12 @@ class TenantContextTest {
         assertThat(TenantContext.isBound()).isFalse()
         assertThat(TenantContext.getTenantId()).isNull()
 
-        val result = TenantContext.withTenant("school-1") {
+        val tenantUuid = "00000000-0000-0000-0000-000000000001"
+        val result = TenantContext.withTenant(tenantUuid) {
             assertThat(TenantContext.isBound()).isTrue()
-            assertThat(TenantContext.getTenantId()).isEqualTo(TenantId.of("school-1"))
-            assertThat(TenantContext.getTenantIdValue()).isEqualTo("school-1")
-            assertThat(TenantContext.requireTenantId()).isEqualTo(TenantId.of("school-1"))
+            assertThat(TenantContext.getTenantId()).isEqualTo(TenantId.of(tenantUuid))
+            assertThat(TenantContext.getTenantIdValue()).isEqualTo(tenantUuid)
+            assertThat(TenantContext.requireTenantId()).isEqualTo(TenantId.of(tenantUuid))
             "processed"
         }
 
@@ -36,8 +37,9 @@ class TenantContextTest {
     @Test
     fun `should execute runnable within tenant scope`() {
         var executed = false
-        TenantContext.runWithTenant(TenantId.of("school-2")) {
-            assertThat(TenantContext.getTenantIdValue()).isEqualTo("school-2")
+        val tenantUuid = "00000000-0000-0000-0000-000000000002"
+        TenantContext.runWithTenant(TenantId.of(tenantUuid)) {
+            assertThat(TenantContext.getTenantIdValue()).isEqualTo(tenantUuid)
             executed = true
         }
         assertThat(executed).isTrue()

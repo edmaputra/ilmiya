@@ -53,7 +53,7 @@ class SchoolControllerTest {
     @Test
     fun `should list schools with default pagination`() {
         val school = School.create(
-            tenantId = TenantId.of("tenant-sch-01"),
+            tenantId = TenantId.of("00000000-0000-0000-0000-000000000001"),
             name = "International Islamic School",
             institutionCode = "IIS-01",
             address = "Jl. Pendidikan No. 1",
@@ -78,7 +78,7 @@ class SchoolControllerTest {
     @Test
     fun `should register a new school successfully`() {
         val school = School.create(
-            tenantId = TenantId.of("tenant-sch-01"),
+            tenantId = TenantId.of("00000000-0000-0000-0000-000000000001"),
             name = "International Islamic School",
             institutionCode = "IIS-01",
             address = "Jl. Pendidikan No. 1",
@@ -93,7 +93,7 @@ class SchoolControllerTest {
                 .content(
                     """
                     {
-                        "tenantId": "tenant-sch-01",
+                        "tenantId": "00000000-0000-0000-0000-000000000001",
                         "name": "International Islamic School",
                         "institutionCode": "IIS-01",
                         "address": "Jl. Pendidikan No. 1",
@@ -111,7 +111,7 @@ class SchoolControllerTest {
 
     @Test
     fun `should get profile when tenant header is supplied`() {
-        val tenantId = TenantId.of("tenant-sch-01")
+        val tenantId = TenantId.of("00000000-0000-0000-0000-000000000001")
         val school = School.create(
             tenantId = tenantId,
             name = "International Islamic School",
@@ -124,15 +124,15 @@ class SchoolControllerTest {
 
         mockMvc.perform(
             get("/api/v1/schools/profile")
-                .header("X-Tenant-ID", "tenant-sch-01")
+                .header("X-Tenant-ID", "00000000-0000-0000-0000-000000000001")
         )
             .andExpect(status().isOk)
-            .andExpect(jsonPath("$.tenantId").value("tenant-sch-01"))
+            .andExpect(jsonPath("$.tenantId").value("00000000-0000-0000-0000-000000000001"))
     }
 
     @Test
     fun `should update profile when tenant header and valid body are supplied`() {
-        val tenantId = TenantId.of("tenant-sch-01")
+        val tenantId = TenantId.of("00000000-0000-0000-0000-000000000001")
         val school = School.create(
             tenantId = tenantId,
             name = "Updated Islamic School",
@@ -145,7 +145,7 @@ class SchoolControllerTest {
 
         mockMvc.perform(
             put("/api/v1/schools/profile")
-                .header("X-Tenant-ID", "tenant-sch-01")
+                .header("X-Tenant-ID", "00000000-0000-0000-0000-000000000001")
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(
                     """
@@ -167,7 +167,7 @@ class SchoolControllerTest {
 
     @Test
     fun `should configure settings when tenant header and valid body are supplied`() {
-        val tenantId = TenantId.of("tenant-sch-01")
+        val tenantId = TenantId.of("00000000-0000-0000-0000-000000000001")
         val school = School.create(
             tenantId = tenantId,
             name = "International Islamic School",
@@ -180,7 +180,7 @@ class SchoolControllerTest {
 
         mockMvc.perform(
             put("/api/v1/schools/settings")
-                .header("X-Tenant-ID", "tenant-sch-01")
+                .header("X-Tenant-ID", "00000000-0000-0000-0000-000000000001")
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(
                     """

@@ -38,7 +38,7 @@ import java.time.LocalDate
 
 class TransactionalUseCasesTest {
 
-    private val tenantId = TenantId.of("tenant-01")
+    private val tenantId = TenantId.of("00000000-0000-0000-0000-000000000001")
 
     // School mocks
     private val schoolRepository = mockk<SchoolRepository>()
@@ -56,7 +56,7 @@ class TransactionalUseCasesTest {
     fun `TransactionalRegisterSchoolUseCase should delegate registration`() {
         val useCase = TransactionalRegisterSchoolUseCase(schoolRepository, schoolEventPublisher)
         val command = RegisterSchoolCommand(
-            tenantId = "tenant-01",
+            tenantId = "00000000-0000-0000-0000-000000000001",
             name = "Test School",
             institutionCode = "TS01",
             address = "Jl. Test 1",
@@ -234,7 +234,7 @@ class TransactionalUseCasesTest {
 
         // Create
         val createCmd = CreateTenantCommand(
-            tenantId = "tenant-01",
+            tenantId = "00000000-0000-0000-0000-000000000001",
             name = "Test Foundation",
             address = "Jl. Test 1",
             contactEmail = "admin@tf.org",

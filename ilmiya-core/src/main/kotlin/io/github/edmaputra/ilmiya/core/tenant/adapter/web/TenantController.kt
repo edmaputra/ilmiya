@@ -11,6 +11,7 @@ import io.github.edmaputra.ilmiya.core.tenant.domain.port.`in`.ListTenantsUseCas
 import io.github.edmaputra.ilmiya.core.tenant.domain.port.`in`.UpdateTenantUseCase
 import jakarta.validation.Valid
 import org.springframework.http.ResponseEntity
+import org.springframework.security.access.prepost.PreAuthorize
 import org.springframework.web.bind.annotation.DeleteMapping
 import org.springframework.web.bind.annotation.GetMapping
 import org.springframework.web.bind.annotation.PathVariable
@@ -24,12 +25,14 @@ import java.net.URI
 
 /**
  * REST controller exposing CRUD endpoints for managing registered tenant foundations across the platform.
+ * Restriced strictly to platform super-administrators.
  *
  * @author edmaputra
  * @since 0.0.1
  */
 @RestController
 @RequestMapping("/api/v1/tenants")
+@PreAuthorize("hasRole('SUPERADMIN')")
 class TenantController(
     private val listTenantsUseCase: ListTenantsUseCase,
     private val getTenantUseCase: GetTenantUseCase,
