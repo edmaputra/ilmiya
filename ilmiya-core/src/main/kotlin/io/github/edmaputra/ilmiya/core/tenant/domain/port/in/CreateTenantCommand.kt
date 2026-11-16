@@ -14,5 +14,8 @@ data class CreateTenantCommand(
     val contactEmail: String,
     val contactPhone: String,
     val logoUrl: String? = null,
-    val tenantId: String? = null
+    val tenantId: String? = null,
+    val adminEmail: String? = null,
+    val adminPassword: String? = null,
+    val adminName: String? = null
 )

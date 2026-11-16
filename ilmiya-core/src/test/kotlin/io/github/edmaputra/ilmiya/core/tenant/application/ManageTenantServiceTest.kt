@@ -7,6 +7,9 @@ import io.github.edmaputra.ilmiya.core.tenant.domain.exception.DuplicateTenantEx
 import io.github.edmaputra.ilmiya.core.tenant.domain.exception.TenantNotFoundException
 import io.github.edmaputra.ilmiya.core.tenant.domain.port.`in`.CreateTenantCommand
 import io.github.edmaputra.ilmiya.core.tenant.domain.port.`in`.UpdateTenantCommand
+import io.github.edmaputra.ilmiya.core.tenant.domain.port.out.ProvisionTenantAdminCommand
+import io.github.edmaputra.ilmiya.core.tenant.domain.port.out.TenantAdminAccount
+import io.github.edmaputra.ilmiya.core.tenant.domain.port.out.TenantAdminProvisioningPort
 import io.github.edmaputra.ilmiya.core.tenant.domain.port.out.TenantEventPublisher
 import io.github.edmaputra.ilmiya.core.tenant.domain.port.out.TenantRepository
 import io.mockk.every
@@ -14,19 +17,38 @@ import io.mockk.mockk
 import io.mockk.verify
 import org.assertj.core.api.Assertions.assertThat
 import org.assertj.core.api.Assertions.assertThatThrownBy
+import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 
 class ManageTenantServiceTest {
 
     private val tenantRepository = mockk<TenantRepository>()
     private val eventPublisher = mockk<TenantEventPublisher>(relaxed = true)
-    private val service = ManageTenantService(tenantRepository, eventPublisher)
+    private val tenantAdminProvisioningPort = mockk<TenantAdminProvisioningPort>()
+    private lateinit var service: ManageTenantService
 
     private val tenantUuid = "00000000-0000-0000-0000-000000000001"
     private val tenantId = TenantId.of(tenantUuid)
 
+    @BeforeEach
+    fun setUp() {
+        service = ManageTenantService(
+            tenantRepository = tenantRepository,
+            eventPublisher = eventPublisher,
+            tenantAdminProvisioningPort = tenantAdminProvisioningPort
+        )
+        every { tenantAdminProvisioningPort.provisionTenantAdmin(any()) } answers {
+            val cmd = firstArg<ProvisionTenantAdminCommand>()
+            TenantAdminAccount(
+                userId = "test-user-id",
+                email = cmd.email,
+                fullName = cmd.fullName
+            )
+        }
+    }
+
     @Test
-    fun `createTenant should validate uniqueness, save tenant, publish events, and return result with explicit tenantId`() {
+    fun `createTenant should validate uniqueness, save tenant, publish events, provision tenant admin, and return result`() {
         val command = CreateTenantCommand(
             tenantId = tenantUuid,
             name = "Yayasan Pendidikan Al-Azhar",
@@ -47,6 +69,47 @@ class ManageTenantServiceTest {
         assertThat(created.legalEntityNumber).isEqualTo("SK-001")
         verify(exactly = 1) { tenantRepository.save(any()) }
         verify(exactly = 1) { eventPublisher.publishAll(any()) }
+        verify(exactly = 1) {
+            tenantAdminProvisioningPort.provisionTenantAdmin(
+                match {
+                    it.tenantId == tenantId &&
+                        it.email == "admin@alazhar.org" &&
+                        it.fullName == "Yayasan Pendidikan Al-Azhar Admin" &&
+                        it.password == ManageTenantService.DEFAULT_TENANT_ADMIN_PASSWORD
+                }
+            )
+        }
+    }
+
+    @Test
+    fun `createTenant should use custom admin credentials when provided`() {
+        val command = CreateTenantCommand(
+            tenantId = tenantUuid,
+            name = "Yayasan Darussalam",
+            address = "Jl. Merdeka",
+            contactEmail = "info@darussalam.org",
+            contactPhone = "021-999999",
+            adminEmail = "custom.admin@darussalam.org",
+            adminPassword = "CustomPassword123!",
+            adminName = "Ahmad Dahlan"
+        )
+
+        every { tenantRepository.existsById(tenantId) } returns false
+        every { tenantRepository.save(any()) } answers { firstArg() }
+
+        val created = service.createTenant(command)
+
+        assertThat(created.id).isEqualTo(tenantId)
+        verify(exactly = 1) {
+            tenantAdminProvisioningPort.provisionTenantAdmin(
+                match {
+                    it.tenantId == tenantId &&
+                        it.email == "custom.admin@darussalam.org" &&
+                        it.password == "CustomPassword123!" &&
+                        it.fullName == "Ahmad Dahlan"
+                }
+            )
+        }
     }
 
     @Test

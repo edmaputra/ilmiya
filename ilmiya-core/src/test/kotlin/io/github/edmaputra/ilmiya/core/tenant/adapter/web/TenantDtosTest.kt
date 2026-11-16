@@ -41,6 +41,26 @@ class TenantDtosTest {
         assertThat(response.contactPhone).isEqualTo("+62211234567")
         assertThat(response.createdAt).isEqualTo(now.toString())
         assertThat(response.updatedAt).isEqualTo(now.toString())
+        assertThat(response.adminEmail).isEqualTo("contact@foundation.org")
+    }
+
+    @Test
+    fun `TenantResponse from should respect custom adminEmail`() {
+        val now = Instant.parse("2026-09-26T00:00:00Z")
+        val tenantUuid = "00000000-0000-0000-0000-000000000001"
+        val tenant = Tenant(
+            id = TenantId.of(tenantUuid),
+            name = "Test Foundation",
+            address = "Jl. Merdeka No. 1",
+            contactEmail = "contact@foundation.org",
+            contactPhone = "+62211234567",
+            status = TenantStatus.ACTIVE,
+            createdAt = now,
+            updatedAt = now
+        )
+
+        val response = TenantResponse.from(tenant, adminEmail = "custom.admin@foundation.org")
+        assertThat(response.adminEmail).isEqualTo("custom.admin@foundation.org")
     }
 
     @Test
@@ -51,7 +71,10 @@ class TenantDtosTest {
             registrationType = "YAYASAN",
             address = "Jl. Request 1",
             contactEmail = "admin@req.org",
-            contactPhone = "021-111"
+            contactPhone = "021-111",
+            adminEmail = "custom.admin@req.org",
+            adminPassword = "SecretPassword123!",
+            adminName = "Foundation Admin"
         )
         val cmd = request.toCommand()
 
@@ -62,6 +85,9 @@ class TenantDtosTest {
         assertThat(cmd.address).isEqualTo("Jl. Request 1")
         assertThat(cmd.contactEmail).isEqualTo("admin@req.org")
         assertThat(cmd.contactPhone).isEqualTo("021-111")
+        assertThat(cmd.adminEmail).isEqualTo("custom.admin@req.org")
+        assertThat(cmd.adminPassword).isEqualTo("SecretPassword123!")
+        assertThat(cmd.adminName).isEqualTo("Foundation Admin")
     }
 
     @Test

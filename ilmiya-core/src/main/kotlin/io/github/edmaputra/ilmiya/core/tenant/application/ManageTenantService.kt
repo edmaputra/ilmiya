@@ -10,6 +10,8 @@ import io.github.edmaputra.ilmiya.core.tenant.domain.port.`in`.DeleteTenantUseCa
 import io.github.edmaputra.ilmiya.core.tenant.domain.port.`in`.GetTenantUseCase
 import io.github.edmaputra.ilmiya.core.tenant.domain.port.`in`.UpdateTenantCommand
 import io.github.edmaputra.ilmiya.core.tenant.domain.port.`in`.UpdateTenantUseCase
+import io.github.edmaputra.ilmiya.core.tenant.domain.port.out.ProvisionTenantAdminCommand
+import io.github.edmaputra.ilmiya.core.tenant.domain.port.out.TenantAdminProvisioningPort
 import io.github.edmaputra.ilmiya.core.tenant.domain.port.out.TenantEventPublisher
 import io.github.edmaputra.ilmiya.core.tenant.domain.port.out.TenantRepository
 
@@ -18,13 +20,19 @@ import io.github.edmaputra.ilmiya.core.tenant.domain.port.out.TenantRepository
  *
  * @property tenantRepository outbound persistence port for tenant aggregates
  * @property eventPublisher outbound publisher for tenant domain events
+ * @property tenantAdminProvisioningPort outbound port for provisioning tenant admin user accounts
  * @author edmaputra
  * @since 0.0.1
  */
 class ManageTenantService(
     private val tenantRepository: TenantRepository,
-    private val eventPublisher: TenantEventPublisher
+    private val eventPublisher: TenantEventPublisher,
+    private val tenantAdminProvisioningPort: TenantAdminProvisioningPort
 ) : CreateTenantUseCase, GetTenantUseCase, UpdateTenantUseCase, DeleteTenantUseCase {
+
+    companion object {
+        const val DEFAULT_TENANT_ADMIN_PASSWORD = "Password123!"
+    }
 
     override fun createTenant(command: CreateTenantCommand): Tenant {
         val tenantId = if (!command.tenantId.isNullOrBlank()) {
@@ -47,6 +55,20 @@ class ManageTenantService(
             logoUrl = command.logoUrl?.trim()
         )
         val saved = tenantRepository.save(tenant)
+
+        val adminEmail = command.adminEmail?.trim()?.takeIf { it.isNotBlank() } ?: command.contactEmail.trim()
+        val adminName = command.adminName?.trim()?.takeIf { it.isNotBlank() } ?: "${command.name.trim()} Admin"
+        val adminPassword = command.adminPassword?.trim()?.takeIf { it.isNotBlank() } ?: DEFAULT_TENANT_ADMIN_PASSWORD
+
+        tenantAdminProvisioningPort.provisionTenantAdmin(
+            ProvisionTenantAdminCommand(
+                tenantId = tenantId,
+                email = adminEmail,
+                password = adminPassword,
+                fullName = adminName
+            )
+        )
+
         eventPublisher.publishAll(tenant.pullDomainEvents())
         return saved
     }

@@ -83,8 +83,10 @@ class TenantController(
     fun createTenant(
         @Valid @RequestBody request: CreateTenantRequest
     ): ResponseEntity<TenantResponse> {
-        val tenant = createTenantUseCase.createTenant(request.toCommand())
-        val response = TenantResponse.from(tenant)
+        val command = request.toCommand()
+        val tenant = createTenantUseCase.createTenant(command)
+        val adminEmail = command.adminEmail?.trim()?.takeIf { it.isNotBlank() } ?: tenant.contactEmail
+        val response = TenantResponse.from(tenant, adminEmail = adminEmail)
         val location = URI.create("/api/v1/tenants/${tenant.id.value}")
         return ResponseEntity.created(location).body(response)
     }
