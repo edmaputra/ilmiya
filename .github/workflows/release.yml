@@ -2,24 +2,54 @@ name: Release
 
 on:
   push:
-    tags:
-      - 'v*.*.*'
+    branches:
+      - main
 
 permissions:
   contents: write
+  pull-requests: write
 
 jobs:
-  release:
-    name: Build & GitHub Release
+  release-please:
+    name: Release Please & Auto-Merge
     runs-on: ubuntu-latest
     steps:
+      - name: Generate GitHub App Token
+        id: app-token
+        uses: actions/create-github-app-token@v3
+        with:
+          app-id: ${{ secrets.RELEASE_APP_ID }}
+          private-key: ${{ secrets.RELEASE_APP_PRIVATE_KEY }}
+
+      - name: Run Release Please
+        id: release
+        uses: googleapis/release-please-action@v4
+        with:
+          token: ${{ steps.app-token.outputs.token }}
+          config-file: release-please-config.json
+          manifest-file: .release-please-manifest.json
+
+      - name: Auto-merge Release PR
+        if: ${{ steps.release.outputs.prs_created == 'true' && steps.release.outputs.pr != '' }}
+        env:
+          GH_TOKEN: ${{ steps.app-token.outputs.token }}
+        run: |
+          PR_NUMBER="${{ fromJSON(steps.release.outputs.pr).number }}"
+          echo "Enabling auto-merge for Release PR #${PR_NUMBER}..."
+          gh pr merge "$PR_NUMBER" \
+            --squash \
+            --auto \
+            --repo "${{ github.repository }}" || true
+
       - name: Checkout code
+        if: ${{ steps.release.outputs.release_created }}
         uses: actions/checkout@v7
         with:
           fetch-depth: 0
           submodules: recursive
 
       - name: Set up Java 25 (temurin)
+        if: ${{ steps.release.outputs.release_created }}
         uses: actions/setup-java@v5
         with:
           java-version: '25'
@@ -27,21 +57,9 @@ jobs:
           cache: 'gradle'
 
       - name: Make Gradle Wrapper executable
+        if: ${{ steps.release.outputs.release_created }}
         run: chmod +x gradlew
 
-      - name: Extract Tag Version
-        id: version
-        run: |
-          VERSION="${GITHUB_REF_NAME#v}"
-          echo "VERSION=${VERSION}" >> "$GITHUB_OUTPUT"
-
       - name: Build with Gradle
-        run: ./gradlew build -Pversion=${{ steps.version.outputs.VERSION }}
-
-      - name: Create GitHub Release
-        uses: softprops/action-gh-release@v2
-        with:
-          name: Release v${{ steps.version.outputs.VERSION }}
-          generate_release_notes: true
-          draft: false
-          prerelease: false
+        if: ${{ steps.release.outputs.release_created }}
+        run: ./gradlew build -Pversion=${{ steps.release.outputs.version }}
