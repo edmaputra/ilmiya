@@ -7,10 +7,10 @@ import io.github.edmaputra.ilmiya.core.tenant.domain.exception.DuplicateTenantEx
 import io.github.edmaputra.ilmiya.core.tenant.domain.exception.TenantNotFoundException
 import io.github.edmaputra.ilmiya.core.tenant.domain.port.`in`.CreateTenantCommand
 import io.github.edmaputra.ilmiya.core.tenant.domain.port.`in`.UpdateTenantCommand
-import io.github.edmaputra.ilmiya.core.tenant.domain.port.out.ProvisionTenantAdminCommand
-import io.github.edmaputra.ilmiya.core.tenant.domain.port.out.TenantAdminAccount
-import io.github.edmaputra.ilmiya.core.tenant.domain.port.out.TenantAdminProvisioningPort
+import io.github.edmaputra.ilmiya.core.tenant.domain.port.out.ProvisionTenantCommand
 import io.github.edmaputra.ilmiya.core.tenant.domain.port.out.TenantEventPublisher
+import io.github.edmaputra.ilmiya.core.tenant.domain.port.out.TenantProvisioningPort
+import io.github.edmaputra.ilmiya.core.tenant.domain.port.out.TenantProvisioningResult
 import io.github.edmaputra.ilmiya.core.tenant.domain.port.out.TenantRepository
 import io.mockk.every
 import io.mockk.mockk
@@ -24,7 +24,7 @@ class ManageTenantServiceTest {
 
     private val tenantRepository = mockk<TenantRepository>()
     private val eventPublisher = mockk<TenantEventPublisher>(relaxed = true)
-    private val tenantAdminProvisioningPort = mockk<TenantAdminProvisioningPort>()
+    private val tenantProvisioningPort = mockk<TenantProvisioningPort>()
     private lateinit var service: ManageTenantService
 
     private val tenantUuid = "00000000-0000-0000-0000-000000000001"
@@ -35,14 +35,14 @@ class ManageTenantServiceTest {
         service = ManageTenantService(
             tenantRepository = tenantRepository,
             eventPublisher = eventPublisher,
-            tenantAdminProvisioningPort = tenantAdminProvisioningPort
+            tenantProvisioningPort = tenantProvisioningPort
         )
-        every { tenantAdminProvisioningPort.provisionTenantAdmin(any()) } answers {
-            val cmd = firstArg<ProvisionTenantAdminCommand>()
-            TenantAdminAccount(
-                userId = "test-user-id",
-                email = cmd.email,
-                fullName = cmd.fullName
+        every { tenantProvisioningPort.provisionTenant(any()) } answers {
+            val cmd = firstArg<ProvisionTenantCommand>()
+            TenantProvisioningResult(
+                adminUserId = "test-user-id",
+                adminEmail = cmd.adminEmail,
+                adminFullName = cmd.fullName
             )
         }
     }
@@ -70,10 +70,10 @@ class ManageTenantServiceTest {
         verify(exactly = 1) { tenantRepository.save(any()) }
         verify(exactly = 1) { eventPublisher.publishAll(any()) }
         verify(exactly = 1) {
-            tenantAdminProvisioningPort.provisionTenantAdmin(
+            tenantProvisioningPort.provisionTenant(
                 match {
                     it.tenantId == tenantId &&
-                        it.email == "admin@alazhar.org" &&
+                        it.adminEmail == "admin@alazhar.org" &&
                         it.fullName == "Yayasan Pendidikan Al-Azhar Admin" &&
                         it.password == ManageTenantService.DEFAULT_TENANT_ADMIN_PASSWORD
                 }
@@ -101,10 +101,10 @@ class ManageTenantServiceTest {
 
         assertThat(created.id).isEqualTo(tenantId)
         verify(exactly = 1) {
-            tenantAdminProvisioningPort.provisionTenantAdmin(
+            tenantProvisioningPort.provisionTenant(
                 match {
                     it.tenantId == tenantId &&
-                        it.email == "custom.admin@darussalam.org" &&
+                        it.adminEmail == "custom.admin@darussalam.org" &&
                         it.password == "CustomPassword123!" &&
                         it.fullName == "Ahmad Dahlan"
                 }

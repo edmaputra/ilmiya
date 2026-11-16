@@ -47,7 +47,7 @@ class TransactionalUseCasesTest {
     // Tenant mocks
     private val tenantRepository = mockk<TenantRepository>()
     private val tenantEventPublisher = mockk<TenantEventPublisher>(relaxed = true)
-    private val tenantAdminProvisioningPort = mockk<io.github.edmaputra.ilmiya.core.tenant.domain.port.out.TenantAdminProvisioningPort>(relaxed = true)
+    private val tenantProvisioningPort = mockk<io.github.edmaputra.ilmiya.core.tenant.domain.port.out.TenantProvisioningPort>(relaxed = true)
 
     // Academic year mocks
     private val academicYearRepository = mockk<AcademicYearRepository>()
@@ -224,7 +224,7 @@ class TransactionalUseCasesTest {
 
     @Test
     fun `TransactionalManageTenantUseCase should delegate CRUD operations`() {
-        val useCase = TransactionalManageTenantUseCase(tenantRepository, tenantEventPublisher, tenantAdminProvisioningPort)
+        val useCase = TransactionalManageTenantUseCase(tenantRepository, tenantEventPublisher, tenantProvisioningPort)
         val tenant = Tenant.create(
             tenantId = tenantId,
             name = "Test Foundation",
@@ -246,7 +246,7 @@ class TransactionalUseCasesTest {
 
         val created = useCase.createTenant(createCmd)
         assertThat(created.name).isEqualTo("Test Foundation")
-        verify(exactly = 1) { tenantAdminProvisioningPort.provisionTenantAdmin(any()) }
+        verify(exactly = 1) { tenantProvisioningPort.provisionTenant(any()) }
 
         // Get
         every { tenantRepository.findById(tenantId) } returns tenant

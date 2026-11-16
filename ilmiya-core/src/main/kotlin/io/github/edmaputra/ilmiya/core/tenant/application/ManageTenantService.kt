@@ -10,9 +10,9 @@ import io.github.edmaputra.ilmiya.core.tenant.domain.port.`in`.DeleteTenantUseCa
 import io.github.edmaputra.ilmiya.core.tenant.domain.port.`in`.GetTenantUseCase
 import io.github.edmaputra.ilmiya.core.tenant.domain.port.`in`.UpdateTenantCommand
 import io.github.edmaputra.ilmiya.core.tenant.domain.port.`in`.UpdateTenantUseCase
-import io.github.edmaputra.ilmiya.core.tenant.domain.port.out.ProvisionTenantAdminCommand
-import io.github.edmaputra.ilmiya.core.tenant.domain.port.out.TenantAdminProvisioningPort
+import io.github.edmaputra.ilmiya.core.tenant.domain.port.out.ProvisionTenantCommand
 import io.github.edmaputra.ilmiya.core.tenant.domain.port.out.TenantEventPublisher
+import io.github.edmaputra.ilmiya.core.tenant.domain.port.out.TenantProvisioningPort
 import io.github.edmaputra.ilmiya.core.tenant.domain.port.out.TenantRepository
 
 /**
@@ -20,14 +20,14 @@ import io.github.edmaputra.ilmiya.core.tenant.domain.port.out.TenantRepository
  *
  * @property tenantRepository outbound persistence port for tenant aggregates
  * @property eventPublisher outbound publisher for tenant domain events
- * @property tenantAdminProvisioningPort outbound port for provisioning tenant admin user accounts
+ * @property tenantProvisioningPort outbound port for provisioning tenant resources and admin accounts
  * @author edmaputra
  * @since 0.0.1
  */
 class ManageTenantService(
     private val tenantRepository: TenantRepository,
     private val eventPublisher: TenantEventPublisher,
-    private val tenantAdminProvisioningPort: TenantAdminProvisioningPort
+    private val tenantProvisioningPort: TenantProvisioningPort
 ) : CreateTenantUseCase, GetTenantUseCase, UpdateTenantUseCase, DeleteTenantUseCase {
 
     companion object {
@@ -60,10 +60,12 @@ class ManageTenantService(
         val adminName = command.adminName?.trim()?.takeIf { it.isNotBlank() } ?: "${command.name.trim()} Admin"
         val adminPassword = command.adminPassword?.trim()?.takeIf { it.isNotBlank() } ?: DEFAULT_TENANT_ADMIN_PASSWORD
 
-        tenantAdminProvisioningPort.provisionTenantAdmin(
-            ProvisionTenantAdminCommand(
+        tenantProvisioningPort.provisionTenant(
+            ProvisionTenantCommand(
                 tenantId = tenantId,
-                email = adminEmail,
+                name = command.name.trim(),
+                contactEmail = command.contactEmail.trim(),
+                adminEmail = adminEmail,
                 password = adminPassword,
                 fullName = adminName
             )

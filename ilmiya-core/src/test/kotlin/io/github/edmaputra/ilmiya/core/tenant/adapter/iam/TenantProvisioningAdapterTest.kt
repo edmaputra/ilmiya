@@ -13,7 +13,7 @@ import io.github.edmaputra.iam.domain.repository.UserRepository
 import io.github.edmaputra.iam.domain.tenancy.TenantId as IamTenantId
 import io.github.edmaputra.ilmiya.common.domain.TenantId
 import io.github.edmaputra.ilmiya.core.security.IlmiyaRoles
-import io.github.edmaputra.ilmiya.core.tenant.domain.port.out.ProvisionTenantAdminCommand
+import io.github.edmaputra.ilmiya.core.tenant.domain.port.out.ProvisionTenantCommand
 import io.mockk.every
 import io.mockk.mockk
 import io.mockk.verify
@@ -24,13 +24,13 @@ import java.time.Instant
 import java.util.Optional
 import java.util.UUID
 
-class TenantAdminProvisioningAdapterTest {
+class TenantProvisioningAdapterTest {
 
     private val manageUserUseCase = mockk<ManageUserUseCase>()
     private val userRepository = mockk<UserRepository>()
     private val roleRepository = mockk<RoleRepository>()
 
-    private lateinit var adapter: TenantAdminProvisioningAdapter
+    private lateinit var adapter: TenantProvisioningAdapter
 
     private val tenantUuid = UUID.randomUUID()
     private val tenantId = TenantId.of(tenantUuid)
@@ -44,7 +44,7 @@ class TenantAdminProvisioningAdapterTest {
         "Tenant Administrator",
         "Tenant Admin Desc",
         true,
-        TenantAdminProvisioningAdapter.TENANT_ADMIN_PERMISSIONS,
+        TenantProvisioningAdapter.TENANT_ADMIN_PERMISSIONS,
         Instant.now(),
         Instant.now()
     )
@@ -63,7 +63,7 @@ class TenantAdminProvisioningAdapterTest {
 
     @BeforeEach
     fun setUp() {
-        adapter = TenantAdminProvisioningAdapter(
+        adapter = TenantProvisioningAdapter(
             manageUserUseCase = manageUserUseCase,
             userRepository = userRepository,
             roleRepository = roleRepository
@@ -71,10 +71,12 @@ class TenantAdminProvisioningAdapterTest {
     }
 
     @Test
-    fun `provisionTenantAdmin should create role and user when absent, then assign role tenant-wide`() {
-        val command = ProvisionTenantAdminCommand(
+    fun `provisionTenant should create role and user when absent, then assign role tenant-wide`() {
+        val command = ProvisionTenantCommand(
             tenantId = tenantId,
-            email = "admin@foundation.org",
+            name = "Foundation Al-Azhar",
+            contactEmail = "contact@foundation.org",
+            adminEmail = "admin@foundation.org",
             password = "Password123!",
             fullName = "Foundation Admin"
         )
@@ -89,11 +91,11 @@ class TenantAdminProvisioningAdapterTest {
         val sampleAssignment = UserRoleAssignment.createTenantWide(userId, roleId, iamTenantId)
         every { manageUserUseCase.assignRole(any()) } returns sampleAssignment
 
-        val result = adapter.provisionTenantAdmin(command)
+        val result = adapter.provisionTenant(command)
 
-        assertThat(result.userId).isEqualTo(userId.value().toString())
-        assertThat(result.email).isEqualTo("admin@foundation.org")
-        assertThat(result.fullName).isEqualTo("Foundation Admin")
+        assertThat(result.adminUserId).isEqualTo(userId.value().toString())
+        assertThat(result.adminEmail).isEqualTo("admin@foundation.org")
+        assertThat(result.adminFullName).isEqualTo("Foundation Admin")
 
         verify(exactly = 1) {
             roleRepository.save(match {
@@ -119,10 +121,12 @@ class TenantAdminProvisioningAdapterTest {
     }
 
     @Test
-    fun `provisionTenantAdmin should reuse existing role and user, and assign role if not yet assigned`() {
-        val command = ProvisionTenantAdminCommand(
+    fun `provisionTenant should reuse existing role and user, and assign role if not yet assigned`() {
+        val command = ProvisionTenantCommand(
             tenantId = tenantId,
-            email = "admin@foundation.org",
+            name = "Foundation Al-Azhar",
+            contactEmail = "contact@foundation.org",
+            adminEmail = "admin@foundation.org",
             password = "Password123!",
             fullName = "Foundation Admin"
         )
@@ -134,9 +138,9 @@ class TenantAdminProvisioningAdapterTest {
         val sampleAssignment = UserRoleAssignment.createTenantWide(userId, roleId, iamTenantId)
         every { manageUserUseCase.assignRole(any()) } returns sampleAssignment
 
-        val result = adapter.provisionTenantAdmin(command)
+        val result = adapter.provisionTenant(command)
 
-        assertThat(result.userId).isEqualTo(userId.value().toString())
+        assertThat(result.adminUserId).isEqualTo(userId.value().toString())
         verify(exactly = 0) { roleRepository.save(any()) }
         verify(exactly = 0) { manageUserUseCase.createUser(any()) }
         verify(exactly = 1) {
@@ -149,10 +153,12 @@ class TenantAdminProvisioningAdapterTest {
     }
 
     @Test
-    fun `provisionTenantAdmin should skip assignRole if user already has TENANT_ADMIN role for tenant`() {
-        val command = ProvisionTenantAdminCommand(
+    fun `provisionTenant should skip assignRole if user already has TENANT_ADMIN role for tenant`() {
+        val command = ProvisionTenantCommand(
             tenantId = tenantId,
-            email = "admin@foundation.org",
+            name = "Foundation Al-Azhar",
+            contactEmail = "contact@foundation.org",
+            adminEmail = "admin@foundation.org",
             password = "Password123!",
             fullName = "Foundation Admin"
         )
@@ -163,9 +169,9 @@ class TenantAdminProvisioningAdapterTest {
         every { userRepository.findByEmail("admin@foundation.org") } returns Optional.of(sampleUser)
         every { manageUserUseCase.getRoleAssignments(userId) } returns listOf(existingAssignment)
 
-        val result = adapter.provisionTenantAdmin(command)
+        val result = adapter.provisionTenant(command)
 
-        assertThat(result.userId).isEqualTo(userId.value().toString())
+        assertThat(result.adminUserId).isEqualTo(userId.value().toString())
         verify(exactly = 0) { manageUserUseCase.assignRole(any()) }
     }
 }
