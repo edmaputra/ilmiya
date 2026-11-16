@@ -6,6 +6,7 @@
       "package-name": "ilmiya",
       "include-component-in-tag": false,
       "changelog-path": "CHANGELOG.md",
+      "skip-snapshot": true,
       "extra-files": [
         "gradle.properties"
       ]
