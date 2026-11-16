@@ -102,6 +102,27 @@ Authorized administrators can perform full lifecycle CRUD management on tenants 
 
 *(Note: For institutional directories, `GET /api/v1/schools` is secured with `school:profile:read` permission).*
 
+### Example: Create Foundation Tenant & Provision Tenant Admin User Account
+```bash
+curl -i -X POST http://localhost:8080/api/v1/tenants \
+  -H "Authorization: Bearer <SUPERADMIN_JWT_TOKEN>" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "name": "Yayasan Pendidikan Darussalam",
+    "legalEntityNumber": "SK-AHU-0012345",
+    "registrationType": "YAYASAN",
+    "address": "Jl. Merdeka No. 45, Gambir, Jakarta Pusat",
+    "contactEmail": "info@darussalam.org",
+    "contactPhone": "+62-21-5550199",
+    "adminEmail": "admin@darussalam.org",
+    "adminPassword": "Password123!",
+    "adminName": "Yayasan Darussalam Admin"
+  }'
+```
+
+> [!NOTE]
+> Creating a new foundation automatically provisions a `TENANT_ADMIN` user account in `ed-iam` scoped tenant-wide for the new foundation. If `adminEmail`, `adminPassword`, or `adminName` are omitted, they default to `contactEmail`, `Password123!`, and `"<Foundation Name> Admin"`.
+
 ### Example: Retrieve Single Tenant
 ```bash
 curl -s -X GET http://localhost:8080/api/v1/tenants/sma-nusantara-1 \
