@@ -17,6 +17,7 @@ import io.github.edmaputra.ilmiya.core.security.scope.ScopeProvisioningEventList
 import io.github.edmaputra.ilmiya.core.security.scope.ScopeProvisioningService
 import io.github.edmaputra.ilmiya.core.tenant.domain.Tenant
 import io.github.edmaputra.ilmiya.core.tenant.domain.port.`in`.CreateTenantCommand
+import io.github.edmaputra.ilmiya.core.tenant.domain.port.out.TenantProvisioningPort
 import io.github.edmaputra.ilmiya.core.tenant.domain.port.out.TenantRepository
 import io.mockk.every
 import io.mockk.mockk
@@ -39,6 +40,7 @@ class ScopeProvisioningFlowTest {
     private val scopeNodeRepository = mockk<ScopeNodeRepository>()
     private val tenantRepository = mockk<TenantRepository>()
     private val schoolRepository = mockk<SchoolRepository>()
+    private val tenantProvisioningPort = mockk<TenantProvisioningPort>(relaxed = true)
 
     private lateinit var applicationContext: AnnotationConfigApplicationContext
     private lateinit var scopeProvisioningService: ScopeProvisioningService
@@ -70,7 +72,7 @@ class ScopeProvisioningFlowTest {
         tenantEventPublisher = SpringTenantEventPublisher(applicationContext)
         schoolEventPublisher = SpringSchoolEventPublisher(applicationContext)
 
-        tenantUseCase = TransactionalManageTenantUseCase(tenantRepository, tenantEventPublisher)
+        tenantUseCase = TransactionalManageTenantUseCase(tenantRepository, tenantEventPublisher, tenantProvisioningPort)
         schoolUseCase = TransactionalRegisterSchoolUseCase(schoolRepository, schoolEventPublisher)
     }
 
