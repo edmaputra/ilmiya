@@ -30,7 +30,14 @@ data class CreateTenantRequest(
     @field:NotBlank(message = "Contact phone is required")
     val contactPhone: String,
 
-    val logoUrl: String? = null
+    val logoUrl: String? = null,
+
+    @field:Email(message = "Admin email must be a valid email address")
+    val adminEmail: String? = null,
+
+    val adminPassword: String? = null,
+
+    val adminName: String? = null
 ) {
     fun toCommand(): CreateTenantCommand = CreateTenantCommand(
         name = name,
@@ -39,7 +46,10 @@ data class CreateTenantRequest(
         address = address,
         contactEmail = contactEmail,
         contactPhone = contactPhone,
-        logoUrl = logoUrl
+        logoUrl = logoUrl,
+        adminEmail = adminEmail,
+        adminPassword = adminPassword,
+        adminName = adminName
     )
 }
 
@@ -98,10 +108,11 @@ data class TenantResponse(
     val logoUrl: String? = null,
     val status: String,
     val createdAt: String,
-    val updatedAt: String
+    val updatedAt: String,
+    val adminEmail: String? = null
 ) {
     companion object {
-        fun from(tenant: Tenant): TenantResponse = TenantResponse(
+        fun from(tenant: Tenant, adminEmail: String? = null): TenantResponse = TenantResponse(
             id = tenant.id.value,
             tenantId = tenant.id.value,
             name = tenant.name,
@@ -113,7 +124,8 @@ data class TenantResponse(
             logoUrl = tenant.logoUrl,
             status = tenant.status.name,
             createdAt = tenant.createdAt.toString(),
-            updatedAt = tenant.updatedAt.toString()
+            updatedAt = tenant.updatedAt.toString(),
+            adminEmail = adminEmail ?: tenant.contactEmail
         )
     }
 }

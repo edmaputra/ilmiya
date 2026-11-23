@@ -13,6 +13,7 @@ import io.github.edmaputra.ilmiya.core.tenant.domain.port.`in`.ListTenantsUseCas
 import io.github.edmaputra.ilmiya.core.tenant.domain.port.`in`.UpdateTenantCommand
 import io.github.edmaputra.ilmiya.core.tenant.domain.port.`in`.UpdateTenantUseCase
 import io.github.edmaputra.ilmiya.core.tenant.domain.port.out.TenantEventPublisher
+import io.github.edmaputra.ilmiya.core.tenant.domain.port.out.TenantProvisioningPort
 import io.github.edmaputra.ilmiya.core.tenant.domain.port.out.TenantRepository
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
@@ -26,10 +27,11 @@ import org.springframework.transaction.annotation.Transactional
 @Service
 class TransactionalManageTenantUseCase(
     tenantRepository: TenantRepository,
-    eventPublisher: TenantEventPublisher
+    eventPublisher: TenantEventPublisher,
+    tenantProvisioningPort: TenantProvisioningPort
 ) : CreateTenantUseCase, GetTenantUseCase, UpdateTenantUseCase, DeleteTenantUseCase {
 
-    private val delegate = ManageTenantService(tenantRepository, eventPublisher)
+    private val delegate = ManageTenantService(tenantRepository, eventPublisher, tenantProvisioningPort)
 
     @Transactional
     override fun createTenant(command: CreateTenantCommand): Tenant =

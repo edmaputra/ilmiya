@@ -136,6 +136,37 @@ class TenantControllerTest {
             .andExpect(header().string("Location", "/api/v1/tenants/$tenantUuid"))
             .andExpect(jsonPath("$.tenantId").value(tenantUuid))
             .andExpect(jsonPath("$.name").value("Yayasan Pendidikan Darussalam"))
+            .andExpect(jsonPath("$.adminEmail").value("info@darussalam.org"))
+    }
+
+    @Test
+    fun `should create tenant with custom admin credentials in request`() {
+        every { createTenantUseCase.createTenant(any()) } returns sampleTenant
+
+        mockMvc.perform(
+            post("/api/v1/tenants")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(
+                    """
+                    {
+                        "name": "Yayasan Pendidikan Darussalam",
+                        "legalEntityNumber": "SK-AHU-0012345",
+                        "registrationType": "YAYASAN",
+                        "address": "Jl. Merdeka No. 45, Jakarta",
+                        "contactEmail": "info@darussalam.org",
+                        "contactPhone": "+62-21-5550199",
+                        "adminEmail": "custom.admin@darussalam.org",
+                        "adminPassword": "Password123!",
+                        "adminName": "Foundation Admin"
+                    }
+                    """.trimIndent()
+                )
+        )
+            .andExpect(status().isCreated)
+            .andExpect(header().string("Location", "/api/v1/tenants/$tenantUuid"))
+            .andExpect(jsonPath("$.tenantId").value(tenantUuid))
+            .andExpect(jsonPath("$.name").value("Yayasan Pendidikan Darussalam"))
+            .andExpect(jsonPath("$.adminEmail").value("custom.admin@darussalam.org"))
     }
 
     @Test
