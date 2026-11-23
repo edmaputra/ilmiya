@@ -14,6 +14,7 @@ import io.mockk.verify
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
+import org.springframework.dao.DataIntegrityViolationException
 import java.time.Instant
 import java.util.Optional
 import java.util.UUID
@@ -37,12 +38,13 @@ class ScopeProvisioningServiceTest {
     }
 
     @Test
-    fun `provisionTenantRootScope should create root scope node with code ROOT, depth 0, and null parent`() {
+    fun `provisionTenantRootScope should create root scope node with deterministic id, code ROOT, depth 0, and null parent`() {
         every { scopeNodeRepository.findByTenantIdAndCode(iamTenantId, "ROOT") } returns Optional.empty()
 
         val rootScope = service.provisionTenantRootScope(tenantId, "Darussalam Islamic Foundation")
 
-        assertThat(rootScope.id).isNotNull
+        // ID must be deterministic: derived from tenant UUID
+        assertThat(rootScope.id.value()).isEqualTo(tenantUuid)
         assertThat(rootScope.tenantId).isEqualTo(iamTenantId)
         assertThat(rootScope.parentId).isNull()
         assertThat(rootScope.isRoot).isTrue()
@@ -60,7 +62,7 @@ class ScopeProvisioningServiceTest {
     @Test
     fun `provisionTenantRootScope should be idempotent and return existing root scope`() {
         val existingNode = ScopeNode(
-            ScopeNodeId.generate(),
+            ScopeNodeId(tenantUuid),
             iamTenantId,
             null,
             "ROOT",
@@ -81,7 +83,7 @@ class ScopeProvisioningServiceTest {
     @Test
     fun `provisionTenantRootScope should update name if tenant name changed`() {
         val existingNode = ScopeNode(
-            ScopeNodeId.generate(),
+            ScopeNodeId(tenantUuid),
             iamTenantId,
             null,
             "ROOT",
@@ -99,9 +101,33 @@ class ScopeProvisioningServiceTest {
     }
 
     @Test
-    fun `provisionCampusAnchorScope should create campus anchor under tenant root with depth 1`() {
+    fun `provisionTenantRootScope should handle concurrent insert by re-reading existing node`() {
+        val winnerNode = ScopeNode(
+            ScopeNodeId(tenantUuid),
+            iamTenantId,
+            null,
+            "ROOT",
+            "Darussalam Root Scope",
+            "/${tenantId.value}/",
+            Instant.now(),
+            Instant.now()
+        )
+        every { scopeNodeRepository.findByTenantIdAndCode(iamTenantId, "ROOT") } returnsMany listOf(
+            Optional.empty(),
+            Optional.of(winnerNode)
+        )
+        every { scopeNodeRepository.save(any()) } throws DataIntegrityViolationException("duplicate key")
+
+        val result = service.provisionTenantRootScope(tenantId, "Darussalam")
+
+        assertThat(result.id).isEqualTo(winnerNode.id)
+        verify(exactly = 1) { scopeNodeRepository.save(any()) }
+    }
+
+    @Test
+    fun `provisionCampusAnchorScope should create campus anchor under tenant root with deterministic id and depth 1`() {
         val rootNode = ScopeNode(
-            ScopeNodeId.generate(),
+            ScopeNodeId(tenantUuid),
             iamTenantId,
             null,
             "ROOT",
@@ -120,6 +146,7 @@ class ScopeProvisioningServiceTest {
             schoolName = "Darussalam Senior High School"
         )
 
+        // ID must be deterministic: derived from school UUID
         assertThat(anchorScope.id.value()).isEqualTo(schoolUuid)
         assertThat(anchorScope.tenantId).isEqualTo(iamTenantId)
         assertThat(anchorScope.parentId).isEqualTo(rootNode.id)
@@ -166,7 +193,7 @@ class ScopeProvisioningServiceTest {
     @Test
     fun `provisionCampusAnchorScope should be idempotent and return existing campus anchor`() {
         val rootNode = ScopeNode(
-            ScopeNodeId.generate(),
+            ScopeNodeId(tenantUuid),
             iamTenantId,
             null,
             "ROOT",
@@ -197,5 +224,45 @@ class ScopeProvisioningServiceTest {
 
         assertThat(result.id).isEqualTo(existingAnchor.id)
         verify(exactly = 0) { scopeNodeRepository.save(any()) }
+    }
+
+    @Test
+    fun `provisionCampusAnchorScope should handle concurrent insert by re-reading existing node`() {
+        val rootNode = ScopeNode(
+            ScopeNodeId(tenantUuid),
+            iamTenantId,
+            null,
+            "ROOT",
+            "Darussalam Root Scope",
+            "/${tenantId.value}/",
+            Instant.now(),
+            Instant.now()
+        )
+        val winnerAnchor = ScopeNode(
+            ScopeNodeId(schoolUuid),
+            iamTenantId,
+            rootNode.id,
+            "SCH-01",
+            "SMA Darussalam",
+            "/${tenantId.value}/${schoolId.value}/",
+            Instant.now(),
+            Instant.now()
+        )
+        every { scopeNodeRepository.findByTenantIdAndCode(iamTenantId, "ROOT") } returns Optional.of(rootNode)
+        every { scopeNodeRepository.findByTenantIdAndCode(iamTenantId, "SCH-01") } returnsMany listOf(
+            Optional.empty(),
+            Optional.of(winnerAnchor)
+        )
+        every { scopeNodeRepository.save(any()) } throws DataIntegrityViolationException("duplicate key")
+
+        val result = service.provisionCampusAnchorScope(
+            tenantId = tenantId,
+            schoolId = schoolId,
+            institutionCode = "SCH-01",
+            schoolName = "SMA Darussalam"
+        )
+
+        assertThat(result.id).isEqualTo(winnerAnchor.id)
+        verify(exactly = 1) { scopeNodeRepository.save(any()) }
     }
 }

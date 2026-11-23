@@ -4,12 +4,9 @@ import io.github.edmaputra.iam.domain.model.ScopeNode
 import io.github.edmaputra.iam.domain.model.ScopeNodeId
 import io.github.edmaputra.iam.domain.tenancy.TenantId as IamTenantId
 import io.github.edmaputra.ilmiya.common.domain.TenantId
-import io.github.edmaputra.ilmiya.core.school.domain.School
 import io.github.edmaputra.ilmiya.core.school.domain.SchoolId
 import io.github.edmaputra.ilmiya.core.school.domain.SchoolProfileUpdatedEvent
 import io.github.edmaputra.ilmiya.core.school.domain.SchoolRegisteredEvent
-import io.github.edmaputra.ilmiya.core.school.domain.SchoolStatus
-import io.github.edmaputra.ilmiya.core.school.domain.port.out.SchoolRepository
 import io.github.edmaputra.ilmiya.core.tenant.domain.Tenant
 import io.github.edmaputra.ilmiya.core.tenant.domain.TenantCreatedEvent
 import io.github.edmaputra.ilmiya.core.tenant.domain.TenantStatus
@@ -28,12 +25,10 @@ class ScopeProvisioningEventListenerTest {
 
     private val scopeProvisioningService = mockk<ScopeProvisioningService>()
     private val tenantRepository = mockk<TenantRepository>()
-    private val schoolRepository = mockk<SchoolRepository>()
 
     private val listener = ScopeProvisioningEventListener(
         scopeProvisioningService,
-        tenantRepository,
-        schoolRepository
+        tenantRepository
     )
 
     private val tenantUuid = UUID.randomUUID()
@@ -147,22 +142,12 @@ class ScopeProvisioningEventListenerTest {
     }
 
     @Test
-    fun `onSchoolProfileUpdated should invoke provisionCampusAnchorScope when school is ACTIVE`() {
+    fun `onSchoolProfileUpdated should invoke provisionCampusAnchorScope using event fields directly`() {
         val schoolId = SchoolId.of(UUID.randomUUID().toString())
-        val school = School.create(
-            id = schoolId,
-            tenantId = tenantId,
-            name = "Darussalam High School Updated",
-            institutionCode = "DAR-HIGH",
-            address = "Jl. Raya 2",
-            contactEmail = "admin@high.sch.id",
-            contactPhone = "021-222222"
-        )
-        every { schoolRepository.findById(schoolId) } returns school
-
         val event = SchoolProfileUpdatedEvent(
             schoolId = schoolId,
             tenantId = tenantId,
+            institutionCode = "DAR-HIGH",
             name = "Darussalam High School Updated"
         )
 

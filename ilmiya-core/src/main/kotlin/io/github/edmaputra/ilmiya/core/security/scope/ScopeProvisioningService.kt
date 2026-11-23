@@ -8,6 +8,7 @@ import io.github.edmaputra.ilmiya.common.domain.TenantId
 import io.github.edmaputra.ilmiya.core.school.domain.SchoolId
 import io.github.edmaputra.ilmiya.core.tenant.domain.port.out.TenantRepository
 import org.slf4j.LoggerFactory
+import org.springframework.dao.DataIntegrityViolationException
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 import java.time.Instant
@@ -19,6 +20,17 @@ import java.util.UUID
  *
  * Guarantees valid foreign key references for tenant- and school-scoped role assignments
  * and eliminates manual anchor setup.
+ *
+ * ### ID strategy
+ * Both root and campus anchor scope node IDs are **deterministic**:
+ * - Tenant Root Scope: `ScopeNodeId(tenantId.toUuid())` — matches the tenant UUID directly.
+ * - Campus Anchor Scope: `ScopeNodeId(UUID.fromString(schoolId.value))` when the school ID is a UUID.
+ *
+ * This enables direct ID lookups (`findById`) and simplifies cross-referencing and backfill migrations.
+ *
+ * ### Concurrency safety
+ * Both provision methods guard against concurrent duplicate-insert races by catching
+ * [DataIntegrityViolationException] on `save` and re-reading the already-committed node.
  *
  * @author edmaputra
  * @since 0.1.0
@@ -35,11 +47,12 @@ class ScopeProvisioningService(
      * Provisions the Tenant Root Scope in the scopes table if not already present.
      *
      * Specification:
-     * - path: /<tenant_id>/
+     * - path: /&lt;tenant_id&gt;/
      * - code: ROOT
-     * - name: <tenant_name> Root Scope
+     * - name: &lt;tenant_name&gt; Root Scope
      * - depth: 0
      * - parent_id: null
+     * - id: deterministic — derived from [tenantId]
      *
      * @param tenantId unique identifier of the tenant foundation
      * @param tenantName name of the tenant foundation
@@ -60,7 +73,8 @@ class ScopeProvisioningService(
             return node
         }
 
-        val rootScopeId = ScopeNodeId.generate()
+        // Deterministic ID: derived from the tenant UUID so direct lookups are possible.
+        val rootScopeId = ScopeNodeId(tenantId.toUuid())
         val path = "/${tenantId.value}/"
         val now = Instant.now()
         val rootNode = ScopeNode(
@@ -73,15 +87,25 @@ class ScopeProvisioningService(
             now,
             now
         )
-        val saved = scopeNodeRepository.save(rootNode)
-        log.info(
-            "Auto-provisioned tenant root scope: id={}, tenantId={}, code={}, path={}",
-            saved.id.value(),
-            tenantId.value,
-            ROOT_SCOPE_CODE,
-            path
-        )
-        return saved
+        return try {
+            val saved = scopeNodeRepository.save(rootNode)
+            log.info(
+                "Auto-provisioned tenant root scope: id={}, tenantId={}, code={}, path={}",
+                saved.id.value(),
+                tenantId.value,
+                ROOT_SCOPE_CODE,
+                path
+            )
+            saved
+        } catch (ex: DataIntegrityViolationException) {
+            // Concurrent insert by another pod/thread — re-read the winner's row.
+            log.warn(
+                "Concurrent insert detected for tenant root scope tenantId={}; re-reading existing node.",
+                tenantId.value
+            )
+            scopeNodeRepository.findByTenantIdAndCode(iamTenantId, ROOT_SCOPE_CODE)
+                .orElseThrow { ex }
+        }
     }
 
     /**
@@ -89,11 +113,12 @@ class ScopeProvisioningService(
      * Automatically provisions the Tenant Root Scope first if it does not yet exist.
      *
      * Specification:
-     * - path: /<tenant_id>/<school_id>/
-     * - code: <school_institution_code>
-     * - name: <school_name>
+     * - path: /&lt;tenant_id&gt;/&lt;school_id&gt;/
+     * - code: &lt;school_institution_code&gt;
+     * - name: &lt;school_name&gt;
      * - depth: 1
-     * - parent_id: <tenant_root_scope_id>
+     * - parent_id: &lt;tenant_root_scope_id&gt;
+     * - id: deterministic — derived from [schoolId] when it is a valid UUID
      *
      * @param tenantId multi-tenant boundary discriminator
      * @param schoolId identifier of the school / campus institution
@@ -131,7 +156,7 @@ class ScopeProvisioningService(
             return node
         }
 
-        // 3. Create Campus Anchor Scope under tenant root
+        // 3. Create Campus Anchor Scope under tenant root with deterministic ID
         val scopeNodeId = runCatching { ScopeNodeId(UUID.fromString(schoolId.value)) }
             .getOrElse { ScopeNodeId.generate() }
         val path = "/${tenantId.value}/${schoolId.value}/"
@@ -146,17 +171,28 @@ class ScopeProvisioningService(
             now,
             now
         )
-        val saved = scopeNodeRepository.save(anchorNode)
-        log.info(
-            "Auto-provisioned campus anchor scope: id={}, tenantId={}, schoolId={}, code={}, parentId={}, path={}",
-            saved.id.value(),
-            tenantId.value,
-            schoolId.value,
-            normalizedCode,
-            rootScope.id.value(),
-            path
-        )
-        return saved
+        return try {
+            val saved = scopeNodeRepository.save(anchorNode)
+            log.info(
+                "Auto-provisioned campus anchor scope: id={}, tenantId={}, schoolId={}, code={}, parentId={}, path={}",
+                saved.id.value(),
+                tenantId.value,
+                schoolId.value,
+                normalizedCode,
+                rootScope.id.value(),
+                path
+            )
+            saved
+        } catch (ex: DataIntegrityViolationException) {
+            // Concurrent insert by another pod/thread — re-read the winner's row.
+            log.warn(
+                "Concurrent insert detected for campus anchor scope tenantId={}, code={}; re-reading existing node.",
+                tenantId.value,
+                normalizedCode
+            )
+            scopeNodeRepository.findByTenantIdAndCode(iamTenantId, normalizedCode)
+                .orElseThrow { ex }
+        }
     }
 
     private fun formatRootScopeName(tenantName: String): String {

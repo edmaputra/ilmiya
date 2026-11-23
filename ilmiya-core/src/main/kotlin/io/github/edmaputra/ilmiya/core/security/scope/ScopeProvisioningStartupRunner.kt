@@ -16,8 +16,13 @@ import org.springframework.stereotype.Component
  * Startup runner ensuring that all active tenants have root scope nodes
  * and all active schools have campus anchor scope nodes provisioned in the scopes table.
  *
- * Runs automatically upon application startup unless explicitly disabled via
- * `ilmiya.iam.scope.auto-provision.startup-backfill.enabled=false`.
+ * **Disabled by default** to prevent concurrent backfill stampedes in multi-replica
+ * production deployments (e.g., Kubernetes rolling updates). Enable explicitly by setting:
+ * ```
+ * ilmiya.iam.scope.auto-provision.startup-backfill.enabled=true
+ * ```
+ * For large datasets, prefer a one-off management CLI task or a Flyway data migration
+ * over startup-time backfill.
  *
  * @author edmaputra
  * @since 0.1.0
@@ -27,7 +32,7 @@ import org.springframework.stereotype.Component
 @ConditionalOnProperty(
     name = ["ilmiya.iam.scope.auto-provision.startup-backfill.enabled"],
     havingValue = "true",
-    matchIfMissing = true
+    matchIfMissing = false
 )
 class ScopeProvisioningStartupRunner(
     private val scopeProvisioningService: ScopeProvisioningService,
