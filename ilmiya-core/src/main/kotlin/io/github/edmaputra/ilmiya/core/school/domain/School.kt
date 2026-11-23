@@ -99,6 +99,7 @@ data class School(
             SchoolProfileUpdatedEvent(
                 schoolId = id,
                 tenantId = tenantId,
+                institutionCode = institutionCode,
                 name = name
             )
         )

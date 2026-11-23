@@ -78,7 +78,10 @@ class SchoolTest {
 
         val events = updated.pullDomainEvents()
         assertThat(events).hasSize(1)
-        assertThat(events.first()).isInstanceOf(SchoolProfileUpdatedEvent::class.java)
+        val event = events.first() as SchoolProfileUpdatedEvent
+        assertThat(event).isInstanceOf(SchoolProfileUpdatedEvent::class.java)
+        assertThat(event.institutionCode).isEqualTo("IIS-01")
+        assertThat(event.name).isEqualTo("Global Islamic Academy")
     }
 
     @Test

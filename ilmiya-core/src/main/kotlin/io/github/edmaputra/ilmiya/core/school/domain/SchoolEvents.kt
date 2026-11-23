@@ -28,6 +28,7 @@ data class SchoolRegisteredEvent(
  *
  * @property schoolId the identifier of the updated school
  * @property tenantId the tenant boundary of the school
+ * @property institutionCode the unique institutional code of the school
  * @property name updated school name
  * @property occurredOn instant when the event occurred
  * @author edmaputra
@@ -36,6 +37,7 @@ data class SchoolRegisteredEvent(
 data class SchoolProfileUpdatedEvent(
     val schoolId: SchoolId,
     val tenantId: TenantId,
+    val institutionCode: String,
     val name: String,
     override val occurredOn: Instant = Instant.now()
 ) : DomainEvent
